@@ -1,54 +1,69 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
 import Link from "next/link"
-import PageLayout from "../components/layout"
-import AuthCard from "../components/auth-card"
+import Navigation from "../components/navigation"
+import DecorativeElements from "../components/decorative-elements"
+import "../../styles.css"
+
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Login attempt with:", { email, password })
+  }
+
   return (
-    <PageLayout>
-      <AuthCard title="Account Login">
-        <form className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Email"
-              className="w-full px-3 py-2 border border-[#d9d9d9] rounded-md"
-            />
+    <div className="page-container">
+      <Navigation />
+      <DecorativeElements />
+
+      <main className="main-content">
+        <div className="auth-card">
+          <h1 className="card-title">Account Login</h1>
+
+          <form className="form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="submit-button">
+              Login
+            </button>
+          </form>
+
+          <div className="form-footer">
+            <p>Don't have an account?</p>
+            <Link href="/auth/signup">Sign Up</Link>
           </div>
-
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="********"
-              className="w-full px-3 py-2 border border-[#d9d9d9] rounded-md"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-2 rounded-md hover:bg-opacity-90 transition-colors"
-          >
-            Login
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm">Don't have an account?</p>
-          <Link href="/auth/signup" className="text-sm font-medium underline">
-           Sign Up
-          </Link>
         </div>
-      </AuthCard>
-    </PageLayout>
+      </main>
+    </div>
   )
 }
 

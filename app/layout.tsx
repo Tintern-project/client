@@ -1,19 +1,21 @@
-import "./globals.css";
-import type { Metadata } from "next";
+import type React from "react"
+import "./globals.css"
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Tintern - Find Your Perfect Internship",
-  description: "Connecting students with meaningful internship opportunities",
-};
+  title: "Tintern",
+  description: "Tintern application",
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
       <body>{children}</body>
     </html>
-  );
+  )
 }
+
