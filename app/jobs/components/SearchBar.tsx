@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 
 const SearchBar: React.FC = () => {
   const [searchText, setSearchText] = useState("");

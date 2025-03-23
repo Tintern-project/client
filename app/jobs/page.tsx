@@ -1,8 +1,8 @@
 "use client";
 import * as React from "react";
-import SearchBar from "@/app/pages/jobs/components/SearchBar";
-import FilterSection from "@/app/pages/jobs/components/FilterSection";
-import JobCard from "@/app/pages/jobs/components/JobCard";
+import SearchBar from "@/app/jobs/components/SearchBar";
+import FilterSection from "@/app/jobs/components/FilterSection";
+import JobCard from "@/app/jobs/components/JobCard";
 
 function JobSearchPageList() {
   const jobListings = [

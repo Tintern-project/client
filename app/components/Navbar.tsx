@@ -21,7 +21,8 @@ export default function Navbar() {
         scrolled
           ? "bg-[#1E1E1E]/95 backdrop-blur-sm py-3 shadow-md"
           : "bg-transparent py-5"
-      }`}>
+      }`}
+    >
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -39,7 +40,8 @@ export default function Navbar() {
           {/* Home */}
           <Link
             href="/"
-            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
+            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
+          >
             {/* Home Icon */}
             <svg
               className="w-5 h-5 mr-2"
@@ -47,7 +49,8 @@ export default function Navbar() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg">
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -59,8 +62,9 @@ export default function Navbar() {
 
           {/* Jobs */}
           <Link
-            href="pages/jobs"
-            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
+            href="jobs"
+            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
+          >
             {/* Briefcase Icon */}
             <svg
               className="w-5 h-5 mr-2"
@@ -68,7 +72,8 @@ export default function Navbar() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg">
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -84,7 +89,8 @@ export default function Navbar() {
           {/* Sign Up */}
           <Link
             href="/signup"
-            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
+            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
+          >
             {/* User Icon */}
             <svg
               className="w-5 h-5 mr-2"
@@ -92,7 +98,8 @@ export default function Navbar() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg">
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -116,7 +123,8 @@ export default function Navbar() {
             className="h-6 w-6"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="currentColor">
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
