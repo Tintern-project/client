@@ -1,22 +1,21 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import Navigation from "../components/navigation"
-import DecorativeElements from "../components/decorative-elements"
-import "../../styles.css"
-
+import { useState } from "react";
+import Link from "next/link";
+import Navigation from "../components/navigation";
+import DecorativeElements from "../components/decorative-elements";
+import "../../styles.css";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Login attempt with:", { email, password })
-  }
+    e.preventDefault();
+    console.log("Login attempt with:", { email, password });
+  };
 
   return (
     <div className="page-container">
@@ -58,12 +57,11 @@ export default function LoginPage() {
           </form>
 
           <div className="form-footer">
-            <p>Don't have an account?</p>
+            <p>Don&apos;t have an account?</p>
             <Link href="/auth/signup">Sign Up</Link>
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }
-
