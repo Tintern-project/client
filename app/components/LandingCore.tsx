@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 export default function MainContentSection() {
   return (
@@ -61,10 +60,12 @@ export default function MainContentSection() {
 
           {/* Card 5: Bottom-right */}
           <div className="feature-card relative bg-[#BA1B1B] rounded-xl justify-center p-7 flex flex-col lg:col-start-3 lg:row-start-2">
-          <div className="flex flex-col gap-y-9 text-center">
-            <p className="text-4xl font-bold">Hundreds</p>
-            <p className="text-xl font-medium">Of Students recommend using Tintern for Job Searching</p>
-          </div>
+            <div className="flex flex-col gap-y-9 text-center">
+              <p className="text-4xl font-bold">Hundreds</p>
+              <p className="text-xl font-medium">
+                Of Students recommend using Tintern for Job Searching
+              </p>
+            </div>
           </div>
         </div>
       </div>
