@@ -62,7 +62,7 @@ export default function Navbar() {
 
           {/* Jobs */}
           <Link
-            href="/jobs"
+            href="jobs"
             className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
           >
             {/* Briefcase Icon */}
