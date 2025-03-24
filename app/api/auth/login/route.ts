@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(data.user);
+
     // Set the auth token in an HTTP-only cookie
     const nextResponse = NextResponse.json({
       success: true,
-      userId: data.user.Id,
+      userId: data.user.id,
       userEmail: data.user.email,
       userName: data.user.name,
     });
