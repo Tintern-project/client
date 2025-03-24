@@ -1,11 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { ChevronDown } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
+import { useAuth } from "@/app/context/auth-context";
 
 export default function SignupForm() {
-  const router = useRouter()
+  const router = useRouter();
+  const { signup, isLoading, error: authError } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,52 +15,31 @@ export default function SignupForm() {
     password: "",
     educationLevel: "undergrad",
     experience: "",
-  })
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSelectEducationLevel = (level: string) => {
-    setFormData((prev) => ({ ...prev, educationLevel: level }))
-    setIsDropdownOpen(false)
-  }
+    setFormData((prev) => ({ ...prev, educationLevel: level }));
+    setIsDropdownOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+    e.preventDefault();
+    setError(null);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/v1/auth/register
-`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.message || "Registration failed")
-      }
-
-      const data = await res.json()
-      console.log("Registration success:", data)
-      // Optionally, store token or set cookie here
-      router.push("/auth/login")
+      await signup(formData);
+      // The redirect is handled in the auth context
     } catch (error: any) {
-      setError(error.message)
-      console.error("Registration failed:", error)
-    } finally {
-      setIsLoading(false)
+      setError(error.message);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
@@ -123,7 +104,7 @@ export default function SignupForm() {
             type="password"
             id="password"
             name="password"
-            placeholder="12345678"
+            placeholder="********"
             value={formData.password}
             onChange={handleChange}
             required
@@ -182,10 +163,8 @@ export default function SignupForm() {
         </div>
       </div>
 
-      {error && (
-        <p className="mt-4 text-red-500 text-center">
-          {error}
-        </p>
+      {(error || authError) && (
+        <p className="mt-4 text-red-500 text-center">{error || authError}</p>
       )}
 
       <div className="mt-8">
@@ -198,5 +177,5 @@ export default function SignupForm() {
         </button>
       </div>
     </form>
-  )
+  );
 }
