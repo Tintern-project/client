@@ -29,7 +29,7 @@ export default function Home() {
             </p>
             <div className="mt-8 animate-fade-in-up animation-delay-300">
               <Link
-                href="/signup"
+                href="auth/signup"
                 className="btn-primary bg-[#C00F0C] hover:bg-[#963434]"
               >
                 Start Now

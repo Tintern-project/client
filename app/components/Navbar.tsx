@@ -88,7 +88,7 @@ export default function Navbar() {
 
           {/* Sign Up */}
           <Link
-            href="/signup"
+            href="/auth/login"
             className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
           >
             {/* User Icon */}
@@ -112,7 +112,7 @@ export default function Navbar() {
                 016 0z"
               />
             </svg>
-            Sign Up
+            Login
           </Link>
         </div>
 
