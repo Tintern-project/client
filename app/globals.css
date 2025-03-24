@@ -1,46 +1,41 @@
 :root {
-  /* Light mode variables */
-  --background-light: #ffffff;
-  --foreground-light: #000000;
-  --primary-light: #000000;
-  --primary-foreground-light: #ffffff;
-  --border-light: #000000;
-  --accent-light: #000000;
-  --card-bg-light: #ffffff;
-
-  /* Dark mode variables */
-  --background-dark: #1e1e1e;
-  --foreground-dark: #ffffff;
-  --primary-dark: #ff6868;
-  --primary-foreground-dark: #ffffff;
-  --border-dark: #333333;
-  --accent-dark: #ff6868;
-  --card-bg-dark: #1e1e1e;
-
-  /* Default to light mode */
-  --background: var(--background-light);
-  --foreground: var(--foreground-light);
-  --primary: var(--primary-light);
-  --primary-foreground: var(--primary-foreground-light);
-  --border: var(--border-light);
-  --accent: var(--accent-light);
-  --card-bg: var(--card-bg-light);
+  --primary: #C00F0C;
+  --dark-gray: #4B4B4B;
+  --background: #1E1E1E;
+  --text: #F5F5F5;
 }
 
-.dark-mode {
-  --background: var(--background-dark);
-  --foreground: var(--foreground-dark);
-  --primary: var(--primary-dark);
-  --primary-foreground: var(--primary-foreground-dark);
-  --border: var(--border-dark);
-  --accent: var(--accent-dark);
-  --card-bg: var(--card-bg-dark);
+body {
+  background-color: var(--background);
+  color: var(--text);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer components {
+  .btn-primary {
+    @apply bg-[#963434] hover:bg-[#963434]/90 text-[#F5F5F5] font-bold py-3 px-6 rounded-md transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .nav-link {
+    @apply text-[#F5F5F5] hover:text-[#963434] transition-colors duration-300;
+  }
+  
+  .feature-card {
+    @apply rounded-xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-[#C00F0C]/40 hover:-translate-y-1;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
 }
 
 body {

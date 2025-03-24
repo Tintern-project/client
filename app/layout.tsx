@@ -1,11 +1,17 @@
-import type React from "react"
-import "./globals.css"
-import type { Metadata } from "next"
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tintern",
-  description: "Tintern application",
-}
+  title: "Tintern | Change How You Think About Applications",
+  description:
+    "Spend less time searching for jobs with Tintern. Our easy swiping mechanism saves you 30 hours a week.",
+  keywords: "job search, application, career, employment, tintern",
+};
 
 export default function RootLayout({
   children,
@@ -14,7 +20,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>
+        <Navbar />
+        <main className="pt-24 pb-24">{children}</main>
+        <Footer />
+      </body>
     </html>
   )
 }
