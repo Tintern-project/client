@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: { userId: string } },
 ) {
   try {
-    const userId = params.userId;
+    const userId = await params.userId;
     const token = request.cookies.get("token")?.value;
 
     if (!token) {
@@ -50,7 +50,7 @@ export async function PUT(
   { params }: { params: { userId: string } },
 ) {
   try {
-    const userId = params.userId;
+    const userId = await params.userId;
     const token = request.cookies.get("token")?.value;
     const body = await request.json();
 

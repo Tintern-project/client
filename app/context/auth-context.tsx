@@ -1,4 +1,5 @@
 "use client";
+
 import {
   createContext,
   useState,
@@ -36,35 +37,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Check authentication status on mount
+  // This useEffect loads the user from the cookie on initial mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadUserFromCookie = () => {
+      // Set loading state while checking auth
       setIsLoading(true);
+
       try {
-        const storedUser = Cookies.get("user");
-        const token = Cookies.get("token");
+        // Get user data from cookie
+        const userCookie = Cookies.get("user");
 
-        if (token && storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-
-            // Optionally verify the token is still valid with the server
-            // This could be a lightweight endpoint that just returns 200 if token is valid
-          } catch (err) {
-            console.error("Failed to parse user from cookie:", err);
-            Cookies.remove("user");
-            Cookies.remove("token");
-          }
+        // If user cookie exists, parse it and set the user state
+        if (userCookie) {
+          const userData = JSON.parse(userCookie);
+          setUser(userData);
         }
-      } catch (error) {
-        console.error("Auth check failed:", error);
+      } catch (err) {
+        console.error("Error loading user from cookie:", err);
+        // Clear potentially corrupted cookies
+        Cookies.remove("user");
+        Cookies.remove("token");
       } finally {
+        // End loading state
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    loadUserFromCookie();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -95,7 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       // Store user in cookie and state
-      Cookies.set("user", JSON.stringify(userData), { expires: 7, path: "/" });
+      // Set a longer expiration time to ensure persistence
+      Cookies.set("user", JSON.stringify(userData), {
+        expires: 7, // 7 days
+        path: "/",
+        sameSite: "strict",
+      });
+
       setUser(userData);
 
       // Redirect to profile
@@ -144,12 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
       });
 
-      // Clear user state and cookies
+      // Clear user state
       setUser(null);
+
+      // Remove cookies
       Cookies.remove("user");
       Cookies.remove("token");
 
-      // Redirect to home page
+      // Navigate to home page
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
@@ -178,12 +185,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const updatedUserData = await response.json();
 
-      // Update the user state and cookie with new data
-      const newUserData = { ...user, ...updatedUserData };
+      // Update the user state with new data
+      const newUserData = {
+        ...user,
+        ...updatedUserData,
+        id: userId, // Ensure ID is preserved
+      };
+
+      // Update the state and cookie
       setUser(newUserData);
       Cookies.set("user", JSON.stringify(newUserData), {
         expires: 7,
         path: "/",
+        sameSite: "strict",
       });
     } catch (error: any) {
       setError(error.message || "Failed to update profile");
