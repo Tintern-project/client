@@ -1,10 +1,99 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
 import { FormInput } from "@/app/profile/components/ui/form-input";
-import { FormSelect } from "@/app/profile/components/ui/form-select";
 import { Button } from "@/app/profile/components/ui/button";
 import { Menu } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/app/context/auth-context";
 
 export default function MobileProfileForm() {
+  const { user, updateProfile, isLoading, error: authError } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [uploadingCv, setUploadingCv] = useState(false);
+  const [uploadedCvName, setUploadedCvName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    try {
+      if (!user?.id) {
+        throw new Error("User ID not available");
+      }
+
+      await updateProfile(user.id, formData);
+      alert("Profile updated successfully!");
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (fileList && fileList.length > 0) {
+      const file = fileList[0];
+      setUploadedCvName(file.name);
+      handleCvUpload(file);
+    }
+  };
+
+  const handleCvUpload = async (file: File) => {
+    if (!file) return;
+
+    setUploadingCv(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/users/resume", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload CV");
+      }
+
+      const data = await response.json();
+      setUploadedCvName(file.name);
+      alert("CV uploaded successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to upload CV");
+      console.error("CV upload error:", err);
+    } finally {
+      setUploadingCv(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white px-4 py-6">
       <div className="flex items-center justify-between mb-12">
@@ -18,11 +107,10 @@ export default function MobileProfileForm() {
               className="object-cover"
             />
           </div>
-          <span className="text-xl">Hi Kendall</span>
+          <span className="text-xl">
+            Hi {user?.name?.split(" ")[0] || "User"}
+          </span>
         </div>
-        <button className="text-white p-2">
-          <Menu size={28} />
-        </button>
       </div>
 
       <div className="space-y-6 relative">
@@ -39,9 +127,11 @@ export default function MobileProfileForm() {
           </label>
           <FormInput
             id="mobile-name"
+            name="name"
             placeholder="John Doe"
-            defaultValue="John Doe"
-            className="rounded-xl h-12 text-base"
+            value={formData.name}
+            onChange={handleChange}
+            className="rounded-xl h-12 text-base text-gray-700"
           />
         </div>
 
@@ -51,44 +141,71 @@ export default function MobileProfileForm() {
           </label>
           <FormInput
             id="mobile-email"
+            name="email"
             placeholder="Example@gmail.com"
             type="email"
-            className="rounded-xl h-12 text-base"
+            value={formData.email}
+            onChange={handleChange}
+            className="rounded-xl h-12 text-base text-gray-700"
           />
         </div>
 
         <div>
-          <label htmlFor="mobile-dob" className="block text-white mb-2">
-            Date Of Birth
+          <label htmlFor="mobile-phone" className="block text-white mb-2">
+            Phone
           </label>
-          <FormSelect id="mobile-dob" className="rounded-xl h-12 text-base">
-            <option>Add / Update Preexisting One</option>
-            <option>January 1, 1990</option>
-            <option>January 1, 1991</option>
-            <option>January 1, 1992</option>
-          </FormSelect>
+          <FormInput
+            id="mobile-phone"
+            name="phone"
+            placeholder="+1234567890"
+            value={formData.phone || ""}
+            onChange={handleChange}
+            className="rounded-xl h-12 text-base text-gray-700"
+          />
         </div>
 
         <div>
           <label htmlFor="mobile-cv" className="block text-white mb-2">
             CV
           </label>
-          <FormSelect id="mobile-cv" className="rounded-xl h-12 text-base">
-            <option>Choose From Uploaded Ones</option>
-            <option>resume_2023.pdf</option>
-            <option>cv_latest.pdf</option>
-          </FormSelect>
+          <div className="rounded-xl h-12 text-base bg-[#222] border border-[#333] px-3 flex items-center">
+            {uploadedCvName ? (
+              <span className="truncate">{uploadedCvName}</span>
+            ) : (
+              <span className="text-gray-400">No file selected</span>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="mobile-cv"
+            accept=".pdf,.doc,.docx"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
 
         <div className="flex justify-center mt-6">
-          <Button className="bg-red-600 hover:bg-red-700 text-white rounded-xl py-2 px-8 text-base">
-            Upload a CV
+          <Button
+            className="bg-red-600 hover:bg-red-700 text-white rounded-xl py-2 px-8 text-base"
+            onClick={triggerFileInput}
+            disabled={uploadingCv}
+          >
+            {uploadingCv ? "Uploading..." : "Upload a CV"}
           </Button>
         </div>
 
+        {(error || authError) && (
+          <p className="text-red-500 mt-2">{error || authError}</p>
+        )}
+
         <div className="pt-8">
-          <Button className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl py-3 text-lg">
-            Update
+          <Button
+            className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl py-3 text-lg"
+            onClick={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? "Updating..." : "Update"}
           </Button>
         </div>
       </div>

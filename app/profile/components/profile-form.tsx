@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FormInput } from "@/app/profile/components/ui/form-input";
-import { FormSelect } from "@/app/profile/components/ui/form-select";
 import { Button } from "@/app/profile/components/ui/button";
 import { useAuth } from "@/app/context/auth-context";
 
@@ -14,6 +13,9 @@ export default function ProfileForm() {
     email: "",
     phone: "",
   });
+  const [uploadingCv, setUploadingCv] = useState(false);
+  const [uploadedCvName, setUploadedCvName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load user data when component mounts
   useEffect(() => {
@@ -45,6 +47,50 @@ export default function ProfileForm() {
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (fileList && fileList.length > 0) {
+      const file = fileList[0];
+      setUploadedCvName(file.name);
+      handleCvUpload(file);
+    }
+  };
+
+  const handleCvUpload = async (file: File) => {
+    if (!file) return;
+
+    setUploadingCv(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/users/resume", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload CV");
+      }
+
+      const data = await response.json();
+      setUploadedCvName(file.name);
+      alert("CV uploaded successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to upload CV");
+      console.error("CV upload error:", err);
+    } finally {
+      setUploadingCv(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   if (!user) {
@@ -106,17 +152,24 @@ export default function ProfileForm() {
 
         <div className="grid grid-cols-2 gap-6 items-end">
           <div>
-            <label
-              htmlFor="cv-select"
-              className="block text-lg font-medium mb-3"
-            >
+            <label htmlFor="cv-file" className="block text-lg font-medium mb-3">
               CV
             </label>
-            <FormSelect id="cv-select" className="h-14 text-lg rounded-lg">
-              <option>Choose From Uploaded Ones</option>
-              <option>resume_2023.pdf</option>
-              <option>cv_latest.pdf</option>
-            </FormSelect>
+            <div className="h-14 text-lg rounded-lg border border-gray-200 bg-white px-3 flex items-center">
+              {uploadedCvName ? (
+                <span className="truncate">{uploadedCvName}</span>
+              ) : (
+                <span className="text-gray-500">No file selected</span>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="cv-file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
 
           <div>
@@ -124,8 +177,10 @@ export default function ProfileForm() {
               variant="secondary"
               type="button"
               className="bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg w-full"
+              onClick={triggerFileInput}
+              disabled={uploadingCv}
             >
-              Upload a CV
+              {uploadingCv ? "Uploading..." : "Upload a CV"}
             </Button>
           </div>
         </div>
