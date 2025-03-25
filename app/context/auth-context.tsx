@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.userId,
         name: data.userName,
         email: data.userEmail,
+        phone: data.userPhone,
       };
 
       // Store user in cookie and state

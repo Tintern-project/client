@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       userId: data.user.id,
       userEmail: data.user.email,
       userName: data.user.name,
+      userPhone: data.user.phone,
     });
 
     // Set secure HTTP-only cookie for the token with longer max age
