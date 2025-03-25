@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <Navbar />
-          <main className="pt-24 pb-24">{children}</main>
+          <main className="pt-27 pb-24">{children}</main>
           <Footer />
         </AuthProvider>
       </body>
