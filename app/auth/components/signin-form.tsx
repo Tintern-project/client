@@ -1,53 +1,28 @@
-"use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+"use client";
+import { useState } from "react";
+import { useAuth } from "@/app/context/auth-context";
 
 export default function SigninForm() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({ email: "", password: "" })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const { login, isLoading, error } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const res = await fetch("http://localhost:3000/api/v1/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.message || "Login failed")
-      }
-
-      const data = await res.json()
-      console.log("Login success:", data)      
-      router.push("/profile") // to be changed in the future to el dasahbord aw ay 7aga
-    } catch (error: any) {
-      setError(error.message)
-      console.error("Login failed:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    e.preventDefault();
+    await login(formData.email, formData.password);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md">
       <div className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-[#F5F5F5] text-center">Email</label>
+          <label htmlFor="email" className="block text-[#F5F5F5] text-center">
+            Email
+          </label>
           <input
             type="email"
             id="email"
@@ -61,7 +36,12 @@ export default function SigninForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-[#F5F5F5] text-center">Password</label>
+          <label
+            htmlFor="password"
+            className="block text-[#F5F5F5] text-center"
+          >
+            Password
+          </label>
           <input
             type="password"
             id="password"
@@ -75,11 +55,7 @@ export default function SigninForm() {
         </div>
       </div>
 
-      {error && (
-        <p className="mt-4 text-red-500 text-center">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
 
       <div className="mt-8">
         <button
@@ -91,5 +67,5 @@ export default function SigninForm() {
         </button>
       </div>
     </form>
-  )
+  );
 }
