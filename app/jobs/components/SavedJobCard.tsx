@@ -43,7 +43,27 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
 
   const handleDelete = async () => {
     try {
-      
+      setIsDeleting(true)
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      const response = await fetch(`http://localhost:3000/api/v1/jobs/save/delete/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete job. Status: ${response.status}`)
+      }
+
+      // Optionally, you can parse response for a message here
+      console.log(`Deleted job: ${title} at ${company}`)
+      onDelete(id) // Update parent state to remove the job card
     } catch (err) {
       console.error("Error deleting job:", err)
     } finally {
