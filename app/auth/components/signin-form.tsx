@@ -33,7 +33,12 @@ export default function SigninForm() {
       }
 
       const data = await res.json()
-      console.log("Login success:", data)      
+      console.log("Login success:", data)
+      if (data.accessToken) {
+        localStorage.setItem("token", data.accessToken) // Save token for future requests
+      } else {
+        throw new Error("No token received from server")
+      }   
       router.push("/profile") // to be changed in the future to el dasahbord aw ay 7aga
     } catch (error: any) {
       setError(error.message)
