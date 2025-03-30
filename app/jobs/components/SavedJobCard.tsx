@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
-
+import Cookies from "js-cookie"
 interface SavedJobCardProps {
   id: string
   title: string
@@ -44,7 +44,7 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
   const handleDelete = async () => {
     try {
       setIsDeleting(true)
-      const token = localStorage.getItem("token")
+      const token = Cookies.get("token")
       if (!token) {
         throw new Error("No authentication token found")
       }

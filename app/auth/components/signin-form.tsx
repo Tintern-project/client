@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
 
 export default function SigninForm() {
   const router = useRouter()
@@ -35,7 +36,7 @@ export default function SigninForm() {
       const data = await res.json()
       console.log("Login success:", data)
       if (data.accessToken) {
-        localStorage.setItem("token", data.accessToken) // Save token for future requests
+        Cookies.set("token", data.accessToken, { expires: 1, path: "/" }) // Save token for future requests
       } else {
         throw new Error("No token received from server")
       }   

@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import SavedJobCard from "../components/SavedJobCard"
+import Cookies from "js-cookie"
 
 interface SavedJob {
   id: string
@@ -22,7 +23,7 @@ function SavedJobsPage() {
     try {
       setIsLoading(true)
       
-      const token = localStorage.getItem("token")
+      const token = Cookies.get("token")
       if (!token) {
         throw new Error("No authentication token found")
       }
