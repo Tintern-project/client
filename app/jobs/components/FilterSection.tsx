@@ -1,34 +1,58 @@
-const FilterSection: React.FC = () => {
-  return (
-    <>
+import React, { useState, useEffect } from "react";
+
+
+  interface FilterSectionProps {
+    onResults: (jobs: any[]) => void; }
+  
+  const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
+    const [formData, setFormData] = useState({
+      location: "",
+      role: "",
+    });
+  
+    const handleFilterClick = async (filterName: string, value: string) => {
+      const updatedFilters = { ...formData, [filterName]: value };
+      setFormData(updatedFilters);
+  
+      try {
+        const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedFilters),
+        });
+  
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to fetch jobs");
+        }
+  
+        const data = await res.json();
+        onResults(data); // Pass results to parent
+      } catch (error: any) {
+        console.error("Error fetching jobs:", error);
+      }
+    }
+
+    return (
       <div>
-        <svg
-          width="48"
-          height="48"
-          viewBox="0 0 48 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="filter-icon"
-        >
-          <path
-            d="M44 6H4L20 24.92V38L28 42V24.92L44 6Z"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <div className="flex gap-2 mb-4">
+          {["Cairo", "Berlin", "Dubai"].map((loc, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleFilterClick("location", loc)}
+              className={`px-4 py-2 rounded-lg ${
+                formData.location === loc ? "bg-blue-600 text-white" : "bg-white border border-gray-300"
+              }`}
+            >
+              {loc}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex gap-2 px-0 py-2">
-        <button className="px-4 py-1.5 h-8 text-sm text-white rounded-lg border border-white border-solid">
-          Position
-        </button>
-        <button className="px-4 py-1.5 h-8 text-sm text-white rounded-lg border border-white border-solid">
-          Cairo
-        </button>
-      </div>
-    </>
-  );
-};
+    );
+  };
+
 
 export default FilterSection;

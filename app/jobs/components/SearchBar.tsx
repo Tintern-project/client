@@ -1,19 +1,52 @@
-"use client";
-import { useState } from "react";
+import React, { useState } from "react";
 
-const SearchBar: React.FC = () => {
-  const [searchText, setSearchText] = useState("");
+interface SearchBarProps {
+  onResults: (jobs: any[]) => void; // Callback to pass job results to parent
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
+  const [keyword, setKeyword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSearchSubmit = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ keyword }), // Send only the keyword
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to fetch jobs");
+      }
+
+      const data = await res.json();
+      onResults(data); // Pass results to parent
+    } catch (error: any) {
+      setError(error.message);
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex items-center px-4 py-1 h-14 rounded-3xl bg-neutral-100 w-[618px] max-md:w-full">
       <input
         type="text"
-        placeholder="Hinted search text"
+        placeholder="Search For Jobs..."
         className="flex-1 text-base border-[none] text-neutral-800 bg-transparent outline-none"
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
       />
-      <button aria-label="Search">
+      <button aria-label="Search" onClick={handleSearchSubmit} disabled={isLoading}>
         <svg
           width="24"
           height="24"
