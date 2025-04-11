@@ -10,10 +10,13 @@ import React, { useState, useEffect } from "react";
       role: "",
     });
   
-    const handleFilterClick = async (filterName: string, value: string) => {
-      const updatedFilters = { ...formData, [filterName]: value };
+        const handleFilterClick = async (filterName: keyof typeof formData, value: string) => {
+        const updatedFilters = {
+        ...formData,
+        [filterName]: formData[filterName] === value ? "" : value,
+      };
       setFormData(updatedFilters);
-  
+    
       try {
         const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
           method: "POST",
@@ -22,18 +25,18 @@ import React, { useState, useEffect } from "react";
           },
           body: JSON.stringify(updatedFilters),
         });
-  
+    
         if (!res.ok) {
           const data = await res.json();
           throw new Error(data.message || "Failed to fetch jobs");
         }
-  
+    
         const data = await res.json();
         onResults(data); // Pass results to parent
       } catch (error: any) {
         console.error("Error fetching jobs:", error);
       }
-    }
+    };
 
     return (
       <div>

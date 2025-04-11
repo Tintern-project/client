@@ -37,6 +37,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearchSubmit(); // Trigger search on Enter key press
+    }
+  };
+
   return (
     <div className="flex items-center px-4 py-1 h-14 rounded-3xl bg-neutral-100 w-[618px] max-md:w-full">
       <input
@@ -45,6 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
         className="flex-1 text-base border-[none] text-neutral-800 bg-transparent outline-none"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
       <button aria-label="Search" onClick={handleSearchSubmit} disabled={isLoading}>
         <svg
