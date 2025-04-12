@@ -5,23 +5,31 @@ interface FilterSectionProps {
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
+  // Static filters
+  const staticFilters = {
+    roles: ["Full-time", "Part-time", "Intern", "Volunteer"],
+    types: ["On-site", "Remote", "Hybrid"],
+  };
+
+  // Dynamic filters (fetched from the API)
   const [filters, setFilters] = useState<{
     industries: string[];
-    roles: string[];
-    locations: string[];
+    cities: string[];
   }>({
     industries: [],
-    roles: [],
-    locations: [],
-  }); // Store filters fetched from the API
+    cities: [],
+  });
+
   const [formData, setFormData] = useState({
     industry: "",
+    city: "",
     role: "",
-    location: "",
+    type: "",
   }); // Store selected filters
+
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch filters from the API
+  // Fetch dynamic filters from the API
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -30,7 +38,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           throw new Error("Failed to fetch filters");
         }
         const data = await res.json();
-        setFilters(data); // Set the filters in state
+        setFilters(data); // Set the dynamic filters in state
       } catch (error: any) {
         console.error("Error fetching filters:", error.message);
         setError("Failed to load filters. Please try again.");
@@ -75,7 +83,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
 
       {/* Filters Container */}
       <div className="flex gap-4">
-        {/* Industries */}
+        {/* Industries (Dynamic) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Industries</h4>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
@@ -83,7 +91,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
               <button
                 key={idx}
                 onClick={() => handleFilterClick("industry", industry)}
-                className={`px-4 py-2 rounded-lg ${
+                className={`px-8 py-2 rounded-lg ${
                   formData.industry === industry
                     ? "bg-blue-600 text-white"
                     : "bg-white border border-gray-300"
@@ -95,15 +103,15 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           </div>
         </div>
 
-        {/* Roles */}
+        {/* Roles (Static) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Roles</h4>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
-            {filters.roles.map((role, idx) => (
+            {staticFilters.roles.map((role, idx) => (
               <button
                 key={idx}
                 onClick={() => handleFilterClick("role", role)}
-                className={`px-4 py-2 rounded-lg ${
+                className={`px-8 py-2 rounded-lg ${
                   formData.role === role
                     ? "bg-blue-600 text-white"
                     : "bg-white border border-gray-300"
@@ -115,21 +123,41 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           </div>
         </div>
 
-        {/* Locations */}
+        {/* Types (Static) */}
         <div className="flex-1">
-          <h4 className="text-lg font-semibold mb-2 text-white">Locations</h4>
+          <h4 className="text-lg font-semibold mb-2 text-white">Types</h4>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
-            {filters.locations.map((location, idx) => (
+            {staticFilters.types.map((type, idx) => (
               <button
                 key={idx}
-                onClick={() => handleFilterClick("location", location)}
-                className={`px-4 py-2 rounded-lg ${
-                  formData.location === location
+                onClick={() => handleFilterClick("type", type)}
+                className={`px-6 py-2 rounded-lg ${
+                  formData.type === type
                     ? "bg-blue-600 text-white"
                     : "bg-white border border-gray-300"
                 }`}
               >
-                {location.split(",")[0]}
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Cities (Dynamic) */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold mb-2 text-white">Cities</h4>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+            {filters.cities.map((city, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleFilterClick("city", city)}
+                className={`px-4 py-2 rounded-lg ${
+                  formData.city === city
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-300"
+                }`}
+              >
+                {city}
               </button>
             ))}
           </div>

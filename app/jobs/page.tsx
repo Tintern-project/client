@@ -10,7 +10,8 @@ function JobSearchPageList() {
     _id: string;
     title: string;
     company: string;
-    location: string;
+    city: string;
+    country: string;
     industry: string;
     role: string;
        }
@@ -94,7 +95,8 @@ function JobSearchPageList() {
         title={job.title}
         company={job.company}
         role={job.role}
-        location={job.location}
+        city ={job.city}
+        country={job.country}
         industry={job.industry}
       />
     ))

@@ -2,7 +2,9 @@
 interface JobCardProps {
   title: string;
   company: string;
-  location: string;
+  country: string;
+  city: string;
+  location?: string;
   role: string;
   industry: string;
 }
@@ -10,7 +12,9 @@ interface JobCardProps {
 const JobCard: React.FC<JobCardProps> = ({
   title,
   company,
-  location,
+  country,
+  city,
+  location = `${city}, ${country}`,
   industry,
   role,
 }) => {
