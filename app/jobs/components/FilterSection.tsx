@@ -5,7 +5,11 @@ interface FilterSectionProps {
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    industries: string[];
+    roles: string[];
+    locations: string[];
+  }>({
     industries: [],
     roles: [],
     locations: [],
@@ -119,13 +123,13 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
               <button
                 key={idx}
                 onClick={() => handleFilterClick("location", location)}
-                className={`px-4 py-0 rounded-lg ${
+                className={`px-4 py-2 rounded-lg ${
                   formData.location === location
                     ? "bg-blue-600 text-white"
                     : "bg-white border border-gray-300"
                 }`}
               >
-                {location}
+                {location.split(",")[0]}
               </button>
             ))}
           </div>
