@@ -94,8 +94,10 @@ function JobSearchPageList() {
         key={job._id}
         title={job.title}
         company={job.company}
+        role={job.role}
         location={job.location}
-        requirements={job.requirements || []} // Provide a default value if `requirements` is undefined
+        industry={job.industry}
+        requirements={job.requirements || ['Undefined Requirements, check their website for more information']} // Provide a default value if `requirements` is undefined
       />
     ))
   ) : (
