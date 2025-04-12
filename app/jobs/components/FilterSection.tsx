@@ -1,61 +1,138 @@
 import React, { useState, useEffect } from "react";
 
+interface FilterSectionProps {
+  onResults: (jobs: any[]) => void; // Callback to pass filtered job results to the parent
+}
 
-  interface FilterSectionProps {
-    onResults: (jobs: any[]) => void; }
-  
-  const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
-    const [formData, setFormData] = useState({
-      location: "",
-      role: "",
-    });
-  
-        const handleFilterClick = async (filterName: keyof typeof formData, value: string) => {
-        const updatedFilters = {
-        ...formData,
-        [filterName]: formData[filterName] === value ? "" : value,
-      };
-      setFormData(updatedFilters);
-    
+const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
+  const [filters, setFilters] = useState({
+    industries: [],
+    roles: [],
+    locations: [],
+  }); // Store filters fetched from the API
+  const [formData, setFormData] = useState({
+    industry: "",
+    role: "",
+    location: "",
+  }); // Store selected filters
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch filters from the API
+  useEffect(() => {
+    const fetchFilters = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedFilters),
-        });
-    
+        const res = await fetch("http://localhost:3000/api/v1/jobs/unique-filters");
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || "Failed to fetch jobs");
+          throw new Error("Failed to fetch filters");
         }
-    
         const data = await res.json();
-        onResults(data); // Pass results to parent
+        setFilters(data); // Set the filters in state
       } catch (error: any) {
-        console.error("Error fetching jobs:", error);
+        console.error("Error fetching filters:", error.message);
+        setError("Failed to load filters. Please try again.");
       }
     };
 
-    return (
-      <div>
-        <div className="flex gap-2 mb-4">
-          {["Cairo", "Berlin", "Dubai"].map((loc, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleFilterClick("location", loc)}
-              className={`px-4 py-2 rounded-lg ${
-                formData.location === loc ? "bg-blue-600 text-white" : "bg-white border border-gray-300"
-              }`}
-            >
-              {loc}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+    fetchFilters();
+  }, []);
+
+  // Handle chip click (toggle selection)
+  const handleFilterClick = async (filterName: keyof typeof formData, value: string) => {
+    const updatedFilters = {
+      ...formData,
+      [filterName]: formData[filterName] === value ? "" : value, // Toggle the filter
+    };
+    setFormData(updatedFilters);
+
+    try {
+      const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedFilters),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to fetch jobs");
+      }
+
+      const data = await res.json();
+      onResults(data); // Pass results to parent
+    } catch (error: any) {
+      console.error("Error fetching jobs:", error.message);
+    }
   };
 
+  return (
+    <div>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {/* Filters Container */}
+      <div className="flex gap-4">
+        {/* Industries */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold mb-2 text-white">Industries</h4>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+            {filters.industries.map((industry, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleFilterClick("industry", industry)}
+                className={`px-4 py-2 rounded-lg ${
+                  formData.industry === industry
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-300"
+                }`}
+              >
+                {industry}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Roles */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold mb-2 text-white">Roles</h4>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+            {filters.roles.map((role, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleFilterClick("role", role)}
+                className={`px-4 py-2 rounded-lg ${
+                  formData.role === role
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-300"
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Locations */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold mb-2 text-white">Locations</h4>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+            {filters.locations.map((location, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleFilterClick("location", location)}
+                className={`px-4 py-0 rounded-lg ${
+                  formData.location === location
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-300"
+                }`}
+              >
+                {location}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default FilterSection;
