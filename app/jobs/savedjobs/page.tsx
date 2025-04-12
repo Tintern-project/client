@@ -1,10 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
 import SavedJobCard from "../components/SavedJobCard"
-import Cookies from "js-cookie"
+import { apiClient } from "@/lib/api-client" // Import the apiClient utility
 
 interface SavedJob {
   id: string
+  _id?: string // Add this field to handle MongoDB's _id format
   title: string
   company: string
   location: string
@@ -23,25 +24,17 @@ function SavedJobsPage() {
     try {
       setIsLoading(true)
       
-      const token = Cookies.get("token")
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
-
-      const response = await fetch("http://localhost:3000/api/v1/jobs/saved", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setSavedJobs(data)
+      // Use the apiClient utility instead of direct fetch
+      const data = await apiClient("/jobs/saved")
+      
+      // Transform the data to ensure each job has an id property
+      const formattedJobs = data.map((job: any) => ({
+        ...job,
+        // Use id if it exists, otherwise use _id (MongoDB format)
+        id: job.id || job._id
+      }))
+      
+      setSavedJobs(formattedJobs)
     } catch (err) {
       console.error("Failed to fetch saved jobs:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred")
@@ -80,7 +73,7 @@ function SavedJobsPage() {
             ) : (
               savedJobs.map((job) => (
                 <SavedJobCard
-                  key={job.id}
+                  key={job.id} // This should now always have a value
                   id={job.id}
                   title={job.title}
                   company={job.company}
