@@ -1,12 +1,32 @@
 "use client";
+import { apiClient } from "@/lib/api-client";
 interface JobCardProps {
+  _id: string;
   title: string;
   company: string;
   location: string;
   requirements: string[];
 }
+const saveJob = async (jobId: string) => {
+  try {
+    const response = await apiClient("jobs/save/{jobId}", {
+      method: "POST",
+      data: { jobId },
+    });
 
+    if (response.status === 200) {
+      alert("Job saved successfully!");
+    } else {
+      throw new Error("Failed to save job");
+    }
+  } catch (error: any) {
+    console.log(jobId);
+    console.error("Error saving job:", error.message);
+    alert("Failed to save job. Please try again.");
+  }
+};
 const JobCard: React.FC<JobCardProps> = ({
+  _id,
   title,
   company,
   location,
@@ -29,7 +49,7 @@ const JobCard: React.FC<JobCardProps> = ({
         </div>
       </div>
       <div className="flex flex-col gap-3.5 px-0 py-5 max-sm:px-0 max-sm:py-2.5">
-        <button className="p-3 text-base rounded-lg transition-all cursor-pointer bg-neutral-800 border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]">
+        <button className="p-3 text-base rounded-lg transition-all cursor-pointer bg-neutral-800 border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]" onClick={() => saveJob(_id)}>
           Star
         </button>
         <button className="p-3 text-base bg-orange-800 rounded-lg transition-all cursor-pointer border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]">
