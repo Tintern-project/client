@@ -5,7 +5,6 @@ interface JobCardProps {
   location: string;
   role: string;
   industry: string;
-  requirements: string[];
 }
 
 const JobCard: React.FC<JobCardProps> = ({
@@ -14,7 +13,6 @@ const JobCard: React.FC<JobCardProps> = ({
   location,
   industry,
   role,
-  requirements,
 }) => {
   return (
     <article className="flex justify-between p-5 rounded-3xl transition-all cursor-pointer bg-zinc-300 duration-[0.3s] ease-[ease] h-[213px] max-sm:h-auto">
@@ -24,12 +22,7 @@ const JobCard: React.FC<JobCardProps> = ({
           {industry} - {location} - {role}
         </p>
         <div className="text-sm leading-5 text-black">
-          <p className="mb-2 underline">Requirements:</p>
-          <ul className="p-0 m-0">
-            {requirements.map((req, index) => (
-              <li key={index}>{req}</li>
-            ))}
-          </ul>
+          <p className="text-sm font-bold">Click to Find More</p>
         </div>
       </div>
       <div className="flex flex-col gap-3.5 px-0 py-5 max-sm:px-0 max-sm:py-2.5">

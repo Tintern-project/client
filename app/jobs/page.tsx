@@ -13,8 +13,7 @@ function JobSearchPageList() {
     location: string;
     industry: string;
     role: string;
-    requirements?: string[]; // Optional, as it may not always be present
-  }
+       }
 
   const [jobListings, setJobListings] = React.useState<job[]>([]); // State to hold job listings
   const [error, setError] = React.useState<string | null>(null);
@@ -97,7 +96,6 @@ function JobSearchPageList() {
         role={job.role}
         location={job.location}
         industry={job.industry}
-        requirements={job.requirements || ['Undefined Requirements, check their website for more information']} // Provide a default value if `requirements` is undefined
       />
     ))
   ) : (
