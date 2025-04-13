@@ -337,15 +337,17 @@ export default function ProfileForm() {
         if (!currentEducation) return;
 
         try {
-            // 1. Determine method and URL
-            const method = editingEducationIndex !== null ? 'PUT' : 'POST';
-            const url = '/api/users/education';
 
-            // 2. Send only the current entry (not the entire array)
-            const response = await fetch(url, {
-                method,
+            const formattedBody = {
+                ...currentEducation,
+                startDate: currentEducation.startDate.replace(/-/g, ''),
+                endDate: currentEducation.endDate.replace(/-/g, '')
+            };
+
+            const response = await fetch('/api/users/education', {
+                method: editingEducationIndex !== null ? 'PUT' : 'POST', // Use POST for new entries
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentEducation) // Send single object
+                body: JSON.stringify(formattedBody) // Send single object, NOT array
             });
 
             if (!response.ok) {
@@ -355,6 +357,7 @@ export default function ProfileForm() {
 
             // 3. Update state with the saved data (including new ID)
             const savedData = await response.json();
+
             setEducations(prev => {
                 const newEducations = [...prev];
                 if (editingEducationIndex !== null) {
