@@ -28,8 +28,7 @@ export default function Navbar() {
         scrolled
           ? "bg-[#1E1E1E]/95 backdrop-blur-sm py-3 shadow-md"
           : "bg-transparent py-5"
-      }`}
-    >
+      }`}>
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -47,8 +46,7 @@ export default function Navbar() {
           {/* Home */}
           <Link
             href="/"
-            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
-          >
+            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
             <svg
               className="w-5 h-5 mr-2"
               fill="none"
@@ -56,8 +54,7 @@ export default function Navbar() {
               strokeWidth={1.5}
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
+              aria-hidden="true">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -70,8 +67,7 @@ export default function Navbar() {
           {/* Jobs */}
           <Link
             href="/jobs"
-            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
-          >
+            className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
             <svg
               className="w-5 h-5 mr-2"
               fill="none"
@@ -79,8 +75,7 @@ export default function Navbar() {
               strokeWidth={1.5}
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
+              aria-hidden="true">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -93,13 +88,12 @@ export default function Navbar() {
             Jobs
           </Link>
 
-          {/* Profile or Login/Signup based on auth state */}
+          {/* Profile & Saved Jobs or Login/Signup based on auth state */}
           {user ? (
             <>
               <Link
-                href="/profile"
-                className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
-              >
+                href="/jobs/savedjobs"
+                className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -107,8 +101,27 @@ export default function Navbar() {
                   strokeWidth={1.5}
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
+                  aria-hidden="true">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21.8 7.2c-.5-1.7-1.9-3.1-3.6-3.6a5.4 5.4 0 00-5.1 1.4L12 5.2l-1.1-1.2A5.4 5.4 0 005.8 3.6c-1.7.5-3.1 1.9-3.6 3.6-.7 2.4 0 5 2.2 7.1L12 21.5l7.6-7.2c2.2-2.1 2.9-4.7 2.2-7.1z"
+                  />
+                </svg>
+                Saved Jobs
+              </Link>
+
+              <Link
+                href="/profile"
+                className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -120,8 +133,7 @@ export default function Navbar() {
               <button
                 onClick={handleLogout}
                 disabled={isLoading}
-                className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
-              >
+                className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -129,8 +141,7 @@ export default function Navbar() {
                   strokeWidth={1.5}
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
+                  aria-hidden="true">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -143,8 +154,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/auth/login"
-              className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300"
-            >
+              className="inline-flex items-center border border-[#F5F5F5] text-[#F5F5F5] px-3 py-2 rounded-md hover:bg-[#4B4B4B] transition-colors duration-300">
               <svg
                 className="w-5 h-5 mr-2"
                 fill="none"
@@ -152,8 +162,7 @@ export default function Navbar() {
                 strokeWidth={1.5}
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
+                aria-hidden="true">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -169,16 +178,14 @@ export default function Navbar() {
         <button
           className="md:hidden text-[#F5F5F5]"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
+          aria-label="Toggle menu">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            aria-hidden="true"
-          >
+            aria-hidden="true">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -196,24 +203,27 @@ export default function Navbar() {
             <Link
               href="/"
               className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B]"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+              onClick={() => setMobileMenuOpen(false)}>
               Home
             </Link>
             <Link
               href="/jobs"
               className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B]"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+              onClick={() => setMobileMenuOpen(false)}>
               Jobs
             </Link>
             {user ? (
               <>
+              <Link
+                  href="/jobs/savedjobs"
+                  className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B]"
+                  onClick={() => setMobileMenuOpen(false)}>
+                  Saved Jobs
+                </Link>
                 <Link
                   href="/profile"
                   className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
+                  onClick={() => setMobileMenuOpen(false)}>
                   Profile
                 </Link>
                 <button
@@ -222,8 +232,7 @@ export default function Navbar() {
                     setMobileMenuOpen(false);
                   }}
                   disabled={isLoading}
-                  className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B] text-left"
-                >
+                  className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B] text-left">
                   {isLoading ? "Logging out..." : "Logout"}
                 </button>
               </>
@@ -231,8 +240,7 @@ export default function Navbar() {
               <Link
                 href="/auth/login"
                 className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
+                onClick={() => setMobileMenuOpen(false)}>
                 Login
               </Link>
             )}
