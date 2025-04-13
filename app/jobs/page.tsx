@@ -10,11 +10,11 @@ function JobSearchPageList() {
     _id: string;
     title: string;
     company: string;
-    location: string;
+    city: string;
+    country: string;
     industry: string;
     role: string;
-    requirements?: string[]; // Optional, as it may not always be present
-  }
+       }
 
   const [jobListings, setJobListings] = React.useState<job[]>([]); // State to hold job listings
   const [error, setError] = React.useState<string | null>(null);
@@ -94,8 +94,10 @@ function JobSearchPageList() {
         key={job._id}
         title={job.title}
         company={job.company}
-        location={job.location}
-        requirements={job.requirements || []} // Provide a default value if `requirements` is undefined
+        role={job.role}
+        city ={job.city}
+        country={job.country}
+        industry={job.industry}
       />
     ))
   ) : (
