@@ -10,10 +10,10 @@ function JobSearchPageList() {
     _id: string;
     title: string;
     company: string;
-    location: string;
+    city: string;
+    country: string;
     industry: string;
     role: string;
-    requirements?: string[]; 
   }
 
   const [jobListings, setJobListings] = React.useState<job[]>([]); // State to hold job listings
@@ -89,21 +89,23 @@ function JobSearchPageList() {
           </div>
         </section>
         <section className="grid gap-6 px-20 py-5 grid-cols-[repeat(2,1fr)] max-md:p-5 max-md:grid-cols-[1fr]">
-          {jobListings && jobListings.length > 0 ? (
-            jobListings.map((job) => (
-              <JobCard
-                key={job._id}
-                _id={job._id}
-                title={job.title}
-                company={job.company}
-                location={job.location}
-                requirements={job.requirements || []} // Provide a default value if `requirements` is undefined
-              />
-            ))
-          ) : (
-            <p className="text-white">No jobs found.</p>
-          )}
-        </section>
+
+  {jobListings && jobListings.length > 0 ? (
+    jobListings.map((job) => (
+      <JobCard
+        key={job._id}
+        title={job.title}
+        company={job.company}
+        role={job.role}
+        city ={job.city}
+        country={job.country}
+        industry={job.industry}
+      />
+    ))
+  ) : (
+    <p className="text-white">No jobs found.</p>
+  )}
+</section>
       </main>
     </div>
   );
