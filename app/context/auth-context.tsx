@@ -171,20 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/users/profile/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
+      // Use apiClient instead of fetch for consistent error handling
+      const updatedUserData = await apiClient('/users/my-profile', {
+        method: 'PUT',
+        data: userData,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update profile");
-      }
-
-      const updatedUserData = await response.json();
 
       // Update the user state with new data
       const newUserData = {
