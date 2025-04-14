@@ -118,20 +118,27 @@ export default function ProfileForm() {
             const response = await fetch('/api/users/experience');
             const data = await handleApiResponse(response, 'Failed to fetch experiences');
 
-            // Process the data
+            // Add debug logging
+            console.log('Raw API response:', data);
+
+            // Process the data - ensure we're getting IDs
             const processedExperiences = Array.isArray(data.experiences)
                 ? data.experiences
                 : Array.isArray(data)
                     ? data
                     : [];
 
-            // Format dates for display
-            const formattedExperiences = processedExperiences.map((exp: { startDate: string; endDate: string; }) => ({
-                ...exp,
+            // Format dates AND ensure ID exists
+            const formattedExperiences = processedExperiences.map((exp: any) => ({
+                id: exp.id || exp._id, // Handle both "id" and MongoDB's "_id"
+                jobTitle: exp.jobTitle,
+                company: exp.company,
                 startDate: displayDate(exp.startDate),
-                endDate: displayDate(exp.endDate)
+                endDate: displayDate(exp.endDate),
+                description: exp.description
             }));
 
+            console.log('Formatted experiences:', formattedExperiences);
             setExperiences(formattedExperiences);
         } catch (err) {
             console.error('Failed to fetch experiences:', err);
@@ -139,16 +146,37 @@ export default function ProfileForm() {
         }
     };
 
+
     // Fetch educations from API
     const fetchEducations = async () => {
         try {
+            console.log('Fetching educations...');
             const response = await fetch('/api/users/education');
-            if (response.ok) {
-                const data = await response.json();
-                setEducations(data.educations || []);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to fetch educations');
             }
+
+            const data = await response.json();
+            console.log('Raw education data:', data);
+
+            // Process education data with proper ID mapping
+            const processedEducations = (data.educations || data).map((edu: any) => ({
+                id: edu.id || edu._id, // Handle both id and _id
+                degree: edu.degree,
+                educationLevel: edu.educationLevel,
+                university: edu.university,
+                startDate: displayDate(edu.startDate),
+                endDate: displayDate(edu.endDate)
+            }));
+
+            console.log('Processed educations:', processedEducations);
+            setEducations(processedEducations);
+
         } catch (err) {
             console.error('Failed to fetch educations:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch educations');
         }
     };
 
@@ -237,60 +265,55 @@ export default function ProfileForm() {
 
     const removeExperience = async (index: number) => {
         const expToRemove = experiences[index];
+        console.log('[DELETE] Initiating removal for experience:', expToRemove);
 
-        // If the experience has no ID, just remove from state
         if (!expToRemove.id) {
-            console.log("No ID found, removing from local state only:", expToRemove);
-            setExperiences(experiences.filter((_, i) => i !== index));
+            console.log('[DELETE] Local-only experience removed');
+            setExperiences(prev => prev.filter((_, i) => i !== index));
             return;
         }
 
         try {
-            console.log(`Attempting to delete experience with ID: ${expToRemove.id}`);
-            console.log("Full experience object being deleted:", expToRemove);
+            console.log('[DELETE] Attempting API deletion for ID:', expToRemove.id);
+            const token = localStorage.getItem('token');
+            console.log('[DELETE] Using token:', token ? 'exists' : 'missing');
 
-            // Send the full experience object instead of just the ID
-            const response = await fetch('/api/users/experience', {
+            const response = await fetch(`/api/users/experience/${expToRemove.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(expToRemove),  // Send the entire experience object
             });
 
-            console.log("DELETE response status:", response.status);
+            console.log('[DELETE] Response status:', response.status);
+            console.log('[DELETE] Response headers:', response.headers);
 
-            // Get the response text first to see what's coming back
-            const responseText = await response.text();
-            console.log("Raw DELETE response:", responseText);
-
-            // Try to parse as JSON if possible
-            let data;
-            try {
-                data = JSON.parse(responseText);
-                console.log("Parsed DELETE response data:", data);
-            } catch (e) {
-                console.error("Failed to parse response as JSON:", e);
-            }
-
-            // Check if the request was successful
             if (!response.ok) {
-                console.error("DELETE failed with status:", response.status);
-                console.error("Error details:", data?.error || data?.message || responseText);
-                throw new Error(data?.error || data?.message || `Failed to delete experience (status: ${response.status})`);
+                const errorText = await response.text();
+                console.error('[DELETE] Server error response:', errorText);
+                throw new Error(errorText || 'Failed to delete experience');
             }
 
-            // Remove from state
-            setExperiences(experiences.filter((_, i) => i !== index));
-            console.log("Experience removed successfully");
+            const responseData = await response.json();
+            console.log('[DELETE] Success response:', responseData);
+
+            setExperiences(prev => prev.filter((_, i) => i !== index));
+            console.log('[DELETE] UI updated optimistically');
 
         } catch (err) {
-            console.error('Error deleting experience:', err);
-            console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace available');
-            setError(err instanceof Error ? err.message : 'Failed to delete experience. Please try again.');
+            console.error('[DELETE] Full error:', err);
+            if (err instanceof Error) {
+                console.error('[DELETE] Error details:', {
+                    message: err.message,
+                    stack: err.stack
+                });
+            }
+            setError(err instanceof Error ? err.message : 'Deletion failed');
+            console.log('[DELETE] Re-fetching experiences to sync state');
+            fetchExperiences();
         }
     };
-
 
     const handleExperienceChange = (field: keyof Experience, value: string) => {
         if (currentExperience) {
@@ -320,64 +343,188 @@ export default function ProfileForm() {
                 endDate: currentExperience.endDate ? formatDate(currentExperience.endDate) : ''
             };
 
-            console.log("Saving experience:", formattedExperience);
-
-            // Determine if this is a create or update operation
-            const isUpdate = editingExperienceIndex !== null && experiences[editingExperienceIndex]?.id;
+            const isUpdate = currentExperience.id !== undefined;
             const method = isUpdate ? 'PUT' : 'POST';
+            const url = isUpdate ? `/api/users/experience/${currentExperience.id}` : '/api/users/experience';
 
-            const response = await fetch('/api/users/experience', {
+            // Remove ID from the body for PUT requests
+            const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedExperience) : formattedExperience;
+
+            const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formattedExperience)
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("API error response:", errorData);
                 throw new Error(errorData.error || 'Save failed');
             }
 
             const savedData = await response.json();
-            console.log("Saved experience data:", savedData);
-
-            // Process the dates back to display format
             const processedExperience = {
                 ...savedData,
                 startDate: displayDate(savedData.startDate),
                 endDate: displayDate(savedData.endDate)
             };
 
-            // Update state with processed data
             setExperiences(prev => {
-                // For new entries, add to the list
-                if (editingExperienceIndex === null) {
+                if (isUpdate) {
+                    return prev.map(exp => exp.id === currentExperience.id ? processedExperience : exp);
+                } else {
                     return [...prev, processedExperience];
                 }
-
-                // For updates, replace the existing entry
-                const newExperiences = [...prev];
-                newExperiences[editingExperienceIndex] = processedExperience;
-                return newExperiences;
             });
 
-            // Cleanup form state
             setCurrentExperience(null);
             setEditingExperienceIndex(null);
             setShowExperienceForm(false);
-
         } catch (err) {
             console.error('Experience save failed:', err);
             setError(err.message || "Failed to save experience");
         }
-
-        setShowExperienceForm(false);
-        // You might also want to close the popup if this was a new entry
-        if (editingExperienceIndex === null) {
-            setShowExperiencePopup(false);
-        }
-
     };
+
+    // Experience Form
+    const renderExperienceForm = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold">
+                {editingExperienceIndex !== null ? 'Edit Experience' : 'Add Experience'}
+            </h3>
+            <div className="space-y-4">
+                <FormInput
+                    label="Job Title"
+                    value={currentExperience?.jobTitle || ''}
+                    onChange={(e) => handleExperienceChange('jobTitle', e.target.value)}
+                    required
+                />
+
+                <FormInput
+                    label="Company"
+                    value={currentExperience?.company || ''}
+                    onChange={(e) => handleExperienceChange('company', e.target.value)}
+                    required
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormInput
+                        label="Start Date"
+                        type="month"
+                        value={currentExperience?.startDate || ''}
+                        onChange={(e) => handleExperienceChange('startDate', e.target.value)}
+                        required
+                    />
+                    <FormInput
+                        label="End Date"
+                        type="month"
+                        value={currentExperience?.endDate || ''}
+                        onChange={(e) => handleExperienceChange('endDate', e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <FormInput
+                        label="Description"
+                        value={currentExperience?.description || ''}
+                        onChange={(e) => handleExperienceChange('description', e.target.value)}
+                        textarea
+                        rows={3}
+                    />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowExperienceForm(false)}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    type="button"
+                    onClick={saveExperienceEntry}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                    Save
+                </Button>
+            </div>
+        </div>
+    );
+
+    // Education Form
+    const renderEducationForm = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold">
+                {editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}
+            </h3>
+            <div className="space-y-4">
+                <FormInput
+                    label="Degree"
+                    value={currentEducation?.degree || ''}
+                    onChange={(e) => handleEducationChange('degree', e.target.value)}
+                    required
+                />
+
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                        Education Level
+                    </label>
+                    <select
+                        value={currentEducation?.educationLevel || 'highschool'}
+                        onChange={(e) => handleEducationChange('educationLevel', e.target.value)}
+                        className="mt-1 block w-full rounded-lg border border-gray-300 p-2 h-12 text-base"
+                    >
+                        <option value="highschool">High School</option>
+                        <option value="undergrad">Undergraduate</option>
+                        <option value="postgrad">Postgraduate</option>
+                        <option value="phd">PhD</option>
+                    </select>
+                </div>
+
+                <FormInput
+                    label="University/Institution"
+                    value={currentEducation?.university || ''}
+                    onChange={(e) => handleEducationChange('university', e.target.value)}
+                    required
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormInput
+                        label="Start Date"
+                        type="month"
+                        value={currentEducation?.startDate || ''}
+                        onChange={(e) => handleEducationChange('startDate', e.target.value)}
+                        required
+                    />
+                    <FormInput
+                        label="End Date"
+                        type="month"
+                        value={currentEducation?.endDate || ''}
+                        onChange={(e) => handleEducationChange('endDate', e.target.value)}
+                    />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEducationForm(false)}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    type="button"
+                    onClick={saveEducationEntry}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                    Save
+                </Button>
+            </div>
+        </div>
+    );
+
 
     // Education Functions
     const addEducation = () => {
@@ -400,24 +547,41 @@ export default function ProfileForm() {
 
     const removeEducation = async (index: number) => {
         const eduToRemove = educations[index];
+        console.log('[DELETE Education] Removing:', eduToRemove);
+
+        if (!eduToRemove.id) {
+            console.log('[DELETE Education] Local-only education removed');
+            setEducations(prev => prev.filter((_, i) => i !== index));
+            return;
+        }
 
         try {
-            const response = await fetch('/api/v1/users/education', {
+            const response = await fetch(`/api/users/education/${eduToRemove.id}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(eduToRemove) // Send full object
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                }
             });
+
+            console.log('[DELETE Education] Response status:', response.status);
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Delete failed');
             }
 
-            setEducations(educations.filter((_, i) => i !== index));
+            // Optimistic update with functional update
+            setEducations(prev => prev.filter((_, i) => i !== index));
+
         } catch (err) {
-            setError(err.message || 'Failed to delete education');
+            console.error('[DELETE Education] Error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete education');
+            // Re-fetch to sync with server
+            fetchEducations();
         }
     };
+
 
     const handleEducationChange = (field: keyof Education, value: string) => {
         if (currentEducation) {
@@ -432,7 +596,6 @@ export default function ProfileForm() {
         if (!currentEducation) return;
 
         try {
-            // Validate required fields
             if (!currentEducation.degree || !currentEducation.university || !currentEducation.startDate) {
                 setError("Please fill in all required fields: Degree, University, and Start Date");
                 return;
@@ -444,104 +607,53 @@ export default function ProfileForm() {
                 endDate: currentEducation.endDate ? formatDate(currentEducation.endDate) : ''
             };
 
-            const response = await fetch('/api/users/education', {
-                method: editingEducationIndex !== null ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formattedEducation)
+            const isUpdate = currentEducation.id !== undefined;
+            const method = isUpdate ? 'PUT' : 'POST';
+            const url = isUpdate ? `/api/users/education/${currentEducation.id}` : '/api/users/education';
+
+            const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedEducation) : formattedEducation;
+
+            const token = localStorage.getItem('token');
+            console.log('Saving education:', { url, method, body: requestBody });
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Save failed');
+                const errorText = await response.text();
+                console.error('[PUT Education] Error:', errorText);
+                throw new Error(errorText || 'Save failed');
             }
 
-            // Get the saved data from API
             const savedData = await response.json();
-
-            // Process the dates back to display format
             const processedEducation = {
                 ...savedData,
                 startDate: displayDate(savedData.startDate),
                 endDate: displayDate(savedData.endDate)
             };
 
-            // Update state with processed data
             setEducations(prev => {
-                if (editingEducationIndex !== null) {
-                    const newEducations = [...prev];
-                    newEducations[editingEducationIndex] = processedEducation;
-                    return newEducations;
+                if (isUpdate) {
+                    return prev.map(edu => edu.id === currentEducation.id ? processedEducation : edu);
                 } else {
                     return [...prev, processedEducation];
                 }
             });
 
-            // Reset form
             setCurrentEducation(null);
             setEditingEducationIndex(null);
             setShowEducationForm(false);
-
         } catch (err) {
             console.error('Save failed:', err);
-            setError(err.message || 'Failed to save education');
-        }
-
-        setShowEducationForm(false);
-        // You might also want to close the popup if this was a new entry
-        if (editingEducationIndex === null) {
-            setShowEducationPopup(false);
+            setError(err instanceof Error ? err.message : 'Failed to save education');
         }
     };
-
-    // Experience Form
-    const ExperienceForm = () => (
-        <div className="space-y-4">
-            <h3 className="text-xl font-semibold">{editingExperienceIndex !== null ? 'Edit Experience' : 'Add Experience'}</h3>
-            <div className="space-y-4">
-                <FormInput label="Job Title" value={currentExperience?.jobTitle || ''} onChange={(e) => handleExperienceChange('jobTitle', e.target.value)} required />
-                <FormInput label="Company" value={currentExperience?.company || ''} onChange={(e) => handleExperienceChange('company', e.target.value)} required />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormInput label="Start Date" type="month" value={currentExperience?.startDate || ''} onChange={(e) => handleExperienceChange('startDate', e.target.value)} required />
-                    <FormInput label="End Date" type="month" value={currentExperience?.endDate || ''} onChange={(e) => handleExperienceChange('endDate', e.target.value)} />
-                </div>
-                <div>
-                    <FormInput label="Description" value={currentExperience?.description || ''} onChange={(e) => handleExperienceChange('description', e.target.value)} textarea rows={3} />
-                </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowExperienceForm(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-800" > Cancel </Button>
-                <Button type="button" onClick={saveExperienceEntry} className="bg-red-600 hover:bg-red-700 text-white" > Save </Button>
-            </div>
-        </div>
-    );
-
-    // Education Form
-    const EducationForm = () => (
-        <div className="space-y-4">
-            <h3 className="text-xl font-semibold">{editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}</h3>
-            <div className="space-y-4">
-                <FormInput label="Degree" value={currentEducation?.degree || ''} onChange={(e) => handleEducationChange('degree', e.target.value)} required />
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Education Level</label>
-                    <select value={currentEducation?.educationLevel || 'highschool'} onChange={(e) => handleEducationChange('educationLevel', e.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-2 h-12 text-base">
-                        <option value="highschool">High School</option>
-                        <option value="undergrad">Undergraduate</option>
-                        <option value="postgrad">Postgraduate</option>
-                        <option value="phd">PhD</option>
-                    </select>
-                </div>
-                <FormInput label="University/Institution" value={currentEducation?.university || ''} onChange={(e) => handleEducationChange('university', e.target.value)} required />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormInput label="Start Date" type="month" value={currentEducation?.startDate || ''} onChange={(e) => handleEducationChange('startDate', e.target.value)} required />
-                    <FormInput label="End Date" type="month" value={currentEducation?.endDate || ''} onChange={(e) => handleEducationChange('endDate', e.target.value)} />
-                </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowEducationForm(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-800"> Cancel </Button>
-                <Button type="button" onClick={saveEducationEntry} className="bg-red-600 hover:bg-red-700 text-white">Save</Button>
-            </div>
-        </div>
-    );
 
     // Experience List Item for popup
     const ExperienceListItem = ({ experience, index }: { experience: Experience, index: number }) => (
@@ -772,9 +884,7 @@ export default function ProfileForm() {
 
             {/* Experience Popup */}
             <Popup isOpen={showExperiencePopup} onClose={() => setShowExperiencePopup(false)} title="Professional Experience">
-                {showExperienceForm ? (
-                    <ExperienceForm />
-                ) : (
+                {showExperienceForm ? renderExperienceForm() : (
                     <div className="space-y-4">
                         {experiences.length === 0 ? (
                             <p className="text-gray-500 text-center py-4">No experiences added yet.</p>
@@ -794,9 +904,7 @@ export default function ProfileForm() {
 
             {/* Education Popup */}
             <Popup isOpen={showEducationPopup} onClose={() => setShowEducationPopup(false)} title="Education History">
-                {showEducationForm ? (
-                    <EducationForm />
-                ) : (
+                {showEducationForm ? renderEducationForm() : (
                     <div className="space-y-4">
                         {educations.length === 0 ? (
                             <p className="text-gray-500 text-center py-4">No education entries added yet.</p>
