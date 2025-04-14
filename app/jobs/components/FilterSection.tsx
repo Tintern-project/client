@@ -94,7 +94,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
                 className={`px-8 py-2 rounded-lg ${
                   formData.industry === industry
                     ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300"
+                    : "bg-white border border-gray-300 text-neutral-800"
                 }`}
               >
                 {industry}
@@ -114,7 +114,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
                 className={`px-8 py-2 rounded-lg ${
                   formData.role === role
                     ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300"
+                    : "bg-white border border-gray-300 text-neutral-800"
                 }`}
               >
                 {role}
@@ -134,7 +134,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
                 className={`px-6 py-2 rounded-lg ${
                   formData.type === type
                     ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300"
+                    : "bg-white border border-gray-300 text-neutral-800"
                 }`}
               >
                 {type}
@@ -154,7 +154,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
                 className={`px-4 py-2 rounded-lg ${
                   formData.city === city
                     ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300"
+                    : "bg-white border border-gray-300 text-neutral-800"
                 }`}
               >
                 {city}
