@@ -16,7 +16,7 @@ export async function GET(
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/v1/users/my-profile/${userId}`,
+      `http://localhost:3000/api/v1/users/my-profile`,
       {
         method: "GET",
         headers: {
@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/v1/users/my-profile/${userId}`,
+      `http://localhost:3000/api/v1/users/my-profile`,
       {
         method: "PUT",
         headers: {
