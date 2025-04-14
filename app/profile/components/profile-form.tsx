@@ -343,12 +343,15 @@ export default function ProfileForm() {
                 endDate: currentExperience.endDate ? formatDate(currentExperience.endDate) : ''
             };
 
-            const isUpdate = currentExperience.id !== undefined;
+            // Determine if this is an update or a new entry
+            const isUpdate = editingExperienceIndex !== null && currentExperience.id !== undefined;
             const method = isUpdate ? 'PUT' : 'POST';
             const url = isUpdate ? `/api/users/experience/${currentExperience.id}` : '/api/users/experience';
 
-            // Remove ID from the body for PUT requests
+            // When updating, remove ID from request body
             const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedExperience) : formattedExperience;
+
+            console.log(`${method} Experience - Request:`, { url, body: requestBody });
 
             const response = await fetch(url, {
                 method,
@@ -361,21 +364,36 @@ export default function ProfileForm() {
                 throw new Error(errorData.error || 'Save failed');
             }
 
+            // Get the saved data from response
             const savedData = await response.json();
+            console.log(`${method} Experience - Response:`, savedData);
+
+            // Create a clean processed experience - use a consistent approach to ID
             const processedExperience = {
-                ...savedData,
-                startDate: displayDate(savedData.startDate),
-                endDate: displayDate(savedData.endDate)
+                // For updates, maintain the same ID to avoid duplication
+                id: isUpdate ? currentExperience.id : (savedData.id || savedData._id),
+                jobTitle: savedData.jobTitle || currentExperience.jobTitle,
+                company: savedData.company || currentExperience.company,
+                startDate: displayDate(savedData.startDate || currentExperience.startDate),
+                endDate: displayDate(savedData.endDate || currentExperience.endDate),
+                description: savedData.description || currentExperience.description
             };
 
+            console.log(`${method} Experience - Processed for UI:`, processedExperience);
+
+            // Update the experiences state with a more reliable approach
             setExperiences(prev => {
-                if (isUpdate) {
-                    return prev.map(exp => exp.id === currentExperience.id ? processedExperience : exp);
+                if (isUpdate && editingExperienceIndex !== null) {
+                    // Create a new array with the updated item at the specific index
+                    const updatedExperiences = [...prev];
+                    updatedExperiences[editingExperienceIndex] = processedExperience;
+                    return updatedExperiences;
                 } else {
                     return [...prev, processedExperience];
                 }
             });
 
+            // Reset form state
             setCurrentExperience(null);
             setEditingExperienceIndex(null);
             setShowExperienceForm(false);
@@ -540,10 +558,20 @@ export default function ProfileForm() {
     };
 
     const editEducation = (index: number) => {
-        setCurrentEducation({ ...educations[index] });
+        // Create a deep copy to avoid reference issues
+        const eduToEdit = JSON.parse(JSON.stringify(educations[index]));
+
+        // Format dates properly
+        eduToEdit.startDate = displayDate(eduToEdit.startDate);
+        eduToEdit.endDate = displayDate(eduToEdit.endDate);
+
+        console.log("Editing education with ID:", eduToEdit.id);
+
+        setCurrentEducation(eduToEdit);
         setEditingEducationIndex(index);
         setShowEducationForm(true);
     };
+
 
     const removeEducation = async (index: number) => {
         const eduToRemove = educations[index];
@@ -594,7 +622,6 @@ export default function ProfileForm() {
 
     const saveEducationEntry = async () => {
         if (!currentEducation) return;
-
         try {
             if (!currentEducation.degree || !currentEducation.university || !currentEducation.startDate) {
                 setError("Please fill in all required fields: Degree, University, and Start Date");
@@ -607,14 +634,16 @@ export default function ProfileForm() {
                 endDate: currentEducation.endDate ? formatDate(currentEducation.endDate) : ''
             };
 
-            const isUpdate = currentEducation.id !== undefined;
+            // Use editingEducationIndex to determine if it's an update
+            const isUpdate = editingEducationIndex !== null && currentEducation.id !== undefined;
             const method = isUpdate ? 'PUT' : 'POST';
             const url = isUpdate ? `/api/users/education/${currentEducation.id}` : '/api/users/education';
 
+            // Remove ID from request body for updates
             const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedEducation) : formattedEducation;
 
             const token = localStorage.getItem('token');
-            console.log('Saving education:', { url, method, body: requestBody });
+            console.log(`${method} Education - Request:`, { url, body: requestBody });
 
             const response = await fetch(url, {
                 method,
@@ -627,20 +656,34 @@ export default function ProfileForm() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[PUT Education] Error:', errorText);
+                console.error(`${method} Education - Error:`, errorText);
                 throw new Error(errorText || 'Save failed');
             }
 
+            // Get the saved data from response
             const savedData = await response.json();
+            console.log(`${method} Education - Response:`, savedData);
+
+            // Process the education with proper ID handling
             const processedEducation = {
-                ...savedData,
-                startDate: displayDate(savedData.startDate),
-                endDate: displayDate(savedData.endDate)
+                // For updates, maintain the same ID to avoid duplication
+                id: isUpdate ? currentEducation.id : (savedData.id || savedData._id),
+                degree: savedData.degree || currentEducation.degree,
+                educationLevel: savedData.educationLevel || currentEducation.educationLevel,
+                university: savedData.university || currentEducation.university,
+                startDate: displayDate(savedData.startDate || currentEducation.startDate),
+                endDate: displayDate(savedData.endDate || currentEducation.endDate)
             };
 
+            console.log(`${method} Education - Processed for UI:`, processedEducation);
+
+            // Update the educations state with a more reliable approach
             setEducations(prev => {
-                if (isUpdate) {
-                    return prev.map(edu => edu.id === currentEducation.id ? processedEducation : edu);
+                if (isUpdate && editingEducationIndex !== null) {
+                    // Create a new array with the updated item at the specific index
+                    const updatedEducations = [...prev];
+                    updatedEducations[editingEducationIndex] = processedEducation;
+                    return updatedEducations;
                 } else {
                     return [...prev, processedEducation];
                 }
@@ -650,7 +693,7 @@ export default function ProfileForm() {
             setEditingEducationIndex(null);
             setShowEducationForm(false);
         } catch (err) {
-            console.error('Save failed:', err);
+            console.error('Education save failed:', err);
             setError(err instanceof Error ? err.message : 'Failed to save education');
         }
     };
