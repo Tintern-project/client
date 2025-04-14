@@ -4,6 +4,7 @@ import SearchBar from "@/app/jobs/components/SearchBar";
 import FilterSection from "@/app/jobs/components/FilterSection";
 import JobCard from "@/app/jobs/components/JobCard";
 import { apiClient } from "@/lib/api-client"; // Import the apiClient
+import { useRouter } from "next/navigation"; // Import useRouter for navigation
 
 function JobSearchPageList() {
   interface job {
@@ -16,6 +17,7 @@ function JobSearchPageList() {
     role: string;
   }
 
+  const router = useRouter(); // Initialize router for navigation
   const [jobListings, setJobListings] = React.useState<job[]>([]); // State to hold job listings
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false); // State to manage loading state
@@ -50,7 +52,25 @@ function JobSearchPageList() {
     setJobListings(jobs);
   };
 
-    
+  const navigateToSwipeMode = () => {
+    router.push('/jobs/swipe');
+  }; 
+
+  // Add function to handle saving jobs to favorites
+  const handleAddToFavorites = async (jobId: string) => {
+    try {
+      // Call the API to save the job
+      await apiClient(`/jobs/save/${jobId}`, {
+        method: "POST",
+      });
+      
+      // Show success message
+      alert("Job saved to favorites!");
+    } catch (error) {
+      console.error("Error saving job:", error);
+      alert("Failed to save job. Please try again.");
+    }
+  };
 
   return (
     <div>
@@ -83,33 +103,40 @@ function JobSearchPageList() {
 
             <FilterSection onResults={handleJobResults} /> {/* Pass callback to FilterSection */}
             <SearchBar onResults={handleJobResults} /> {/* Pass callback to SearchBar */}
-            <button className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid border-[color:var(--sds-color-border-danger-secondary)]">
+            <button 
+              onClick={navigateToSwipeMode}
+              className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid border-[color:var(--sds-color-border-danger-secondary)]"
+            >
               Swipe Mode
             </button>
           </div>
         </section>
         <section className="grid gap-6 px-20 py-5 grid-cols-[repeat(2,1fr)] max-md:p-5 max-md:grid-cols-[1fr]">
-
-  {jobListings && jobListings.length > 0 ? (
-    jobListings.map((job) => (
-      <JobCard
-        key={job._id}
-        title={job.title}
-        company={job.company}
-        role={job.role}
-        city ={job.city}
-        country={job.country}
-        industry={job.industry}
-      />
-    ))
-  ) : (
-    <p className="text-white">No jobs found.</p>
-  )}
-</section>
+          {isLoading ? (
+            <div className="text-white text-xl col-span-2">Loading jobs...</div>
+          ) : error ? (
+            <div className="text-red-500 text-xl col-span-2">Error: {error}</div>
+          ) : jobListings && jobListings.length > 0 ? (
+            jobListings.map((job) => (
+              <JobCard
+                key={job._id}
+                _id={job._id}
+                title={job.title}
+                company={job.company}
+                role={job.role}
+                city={job.city}
+                country={job.country}
+                industry={job.industry}
+                onAddToFavorites={handleAddToFavorites}
+              />
+            ))
+          ) : (
+            <p className="text-white col-span-2">No jobs found.</p>
+          )}
+        </section>
       </main>
     </div>
   );
 }
 
 export default JobSearchPageList;
-

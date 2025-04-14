@@ -1,33 +1,17 @@
-"use client";
-import { apiClient } from "@/lib/api-client";
+import React from "react";
+
 interface JobCardProps {
   _id: string;
   title: string;
   company: string;
-  country: string;
-  city: string;
-  location?: string;
   role: string;
+  city: string;
+  country: string;
   industry: string;
+  location?: string;
+  onAddToFavorites?: (jobId: string) => Promise<void>;
 }
-const saveJob = async (jobId: string) => {
-  try {
-    const response = await apiClient("jobs/save/{jobId}", {
-      method: "POST",
-      data: { jobId },
-    });
 
-    if (response.status === 200) {
-      alert("Job saved successfully!");
-    } else {
-      throw new Error("Failed to save job");
-    }
-  } catch (error: any) {
-    console.log(jobId);
-    console.error("Error saving job:", error.message);
-    alert("Failed to save job. Please try again.");
-  }
-};
 const JobCard: React.FC<JobCardProps> = ({
   _id,
   title,
@@ -37,7 +21,19 @@ const JobCard: React.FC<JobCardProps> = ({
   location = `${city}, ${country}`,
   industry,
   role,
+  onAddToFavorites,
 }) => {
+  
+  const handleSaveClick = async () => {
+    if (onAddToFavorites) {
+      try {
+        await onAddToFavorites(_id);
+      } catch (error) {
+        console.error("Error saving job:", error);
+      }
+    }
+  };
+
   return (
     <article className="flex justify-between p-5 rounded-3xl transition-all cursor-pointer bg-zinc-300 duration-[0.3s] ease-[ease] h-[213px] max-sm:h-auto">
       <div className="flex flex-col gap-2.5">
@@ -50,7 +46,10 @@ const JobCard: React.FC<JobCardProps> = ({
         </div>
       </div>
       <div className="flex flex-col gap-3.5 px-0 py-5 max-sm:px-0 max-sm:py-2.5">
-        <button className="p-3 text-base rounded-lg transition-all cursor-pointer bg-neutral-800 border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]" onClick={() => saveJob(_id)}>
+        <button 
+          className="p-3 text-base rounded-lg transition-all cursor-pointer bg-neutral-800 border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]" 
+          onClick={handleSaveClick}
+        >
           Star
         </button>
         <button className="p-3 text-base bg-orange-800 rounded-lg transition-all cursor-pointer border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]">
