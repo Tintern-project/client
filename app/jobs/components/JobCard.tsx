@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface JobCardProps {
   _id: string;
@@ -23,8 +24,11 @@ const JobCard: React.FC<JobCardProps> = ({
   role,
   onAddToFavorites,
 }) => {
-  
-  const handleSaveClick = async () => {
+  const router = useRouter();
+
+  // Create a handler for the Star button
+  const handleSaveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking the star button
     if (onAddToFavorites) {
       try {
         await onAddToFavorites(_id);
@@ -34,8 +38,16 @@ const JobCard: React.FC<JobCardProps> = ({
     }
   };
 
+  // Navigate to job detail page
+  const navigateToJobDetail = () => {
+    router.push(`/jobs/${_id}`);
+  };
+
   return (
-    <article className="flex justify-between p-5 rounded-3xl transition-all cursor-pointer bg-zinc-300 duration-[0.3s] ease-[ease] h-[213px] max-sm:h-auto">
+    <article 
+      className="flex justify-between p-5 rounded-3xl transition-all cursor-pointer bg-zinc-300 duration-[0.3s] ease-[ease] h-[213px] max-sm:h-auto"
+      onClick={navigateToJobDetail}
+    >
       <div className="flex flex-col gap-2.5">
         <h2 className="text-sm font-bold text-black">{title} - {company}</h2>
         <p className="text-base text-black">
@@ -52,7 +64,13 @@ const JobCard: React.FC<JobCardProps> = ({
         >
           Star
         </button>
-        <button className="p-3 text-base bg-orange-800 rounded-lg transition-all cursor-pointer border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]">
+        <button 
+          className="p-3 text-base bg-orange-800 rounded-lg transition-all cursor-pointer border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Apply functionality would go here
+          }}
+        >
           Apply
         </button>
       </div>
