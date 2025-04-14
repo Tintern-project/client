@@ -43,24 +43,13 @@ const Popup = ({
             <div className="bg-white rounded-lg w-11/12 max-w-2xl max-h-[80vh] flex flex-col">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700"
-                    >
-                        <X size={24} />
-                    </button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700" > <X size={24} /> </button>
                 </div>
                 <div className="p-4 overflow-y-auto flex-grow">
                     {children}
                 </div>
                 <div className="p-4 border-t flex justify-end">
-                    <Button
-                        type="button"
-                        onClick={onClose}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                        Close
-                    </Button>
+                    <Button type="button" onClick={onClose} className="bg-red-600 hover:bg-red-700 text-white" > Close </Button>
                 </div>
             </div>
         </div>
@@ -108,13 +97,51 @@ export default function ProfileForm() {
     // Fetch experiences from API
     const fetchExperiences = async () => {
         try {
+            console.log('Fetching experiences...');
             const response = await fetch('/api/users/experience');
-            if (response.ok) {
-                const data = await response.json();
-                setExperiences(data.experiences || []);
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Failed to fetch experiences:', errorData);
+                setError(errorData.error || 'Failed to fetch experiences');
+                return;
+            }
+
+            const data = await response.json();
+            console.log('Raw experiences data:', data);
+
+            // Handle different response formats
+            if (data.experiences && Array.isArray(data.experiences)) {
+                console.log('Setting experiences from data.experiences array');
+
+                // Process dates for display
+                const processedExperiences = data.experiences.map(exp => ({
+                    ...exp,
+                    startDate: displayDate(exp.startDate),
+                    endDate: displayDate(exp.endDate)
+                }));
+
+                setExperiences(processedExperiences);
+            } else if (Array.isArray(data)) {
+                console.log('Setting experiences from direct array');
+
+                // Process dates for display
+                const processedExperiences = data.map(exp => ({
+                    ...exp,
+                    startDate: displayDate(exp.startDate),
+                    endDate: displayDate(exp.endDate)
+                }));
+
+                setExperiences(processedExperiences);
+            } else {
+                console.error('Unexpected data format:', data);
+                setExperiences([]);
+                setError('Received unexpected data format from server');
             }
         } catch (err) {
             console.error('Failed to fetch experiences:', err);
+            setError('Failed to fetch experiences. Please try again.');
         }
     };
 
@@ -198,7 +225,13 @@ export default function ProfileForm() {
     };
 
     const editExperience = (index: number) => {
-        setCurrentExperience({ ...experiences[index] });
+        const expToEdit = { ...experiences[index] };
+
+        // Make sure dates are in the YYYY-MM format for input[type=month]
+        expToEdit.startDate = displayDate(expToEdit.startDate);
+        expToEdit.endDate = displayDate(expToEdit.endDate);
+
+        setCurrentExperience(expToEdit);
         setEditingExperienceIndex(index);
         setShowExperienceForm(true);
     };
@@ -206,29 +239,39 @@ export default function ProfileForm() {
     const removeExperience = async (index: number) => {
         const expToRemove = experiences[index];
 
-        // If the experience has an ID, delete it from the server
-        if (expToRemove.id) {
-            try {
-                const response = await fetch('/api/users/experience', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: expToRemove.id }),
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to delete experience');
-                }
-            } catch (err) {
-                console.error('Error deleting experience:', err);
-                setError('Failed to delete experience. Please try again.');
-                return;
-            }
+        // If the experience has no ID, just remove from state
+        if (!expToRemove.id) {
+            setExperiences(experiences.filter((_, i) => i !== index));
+            return;
         }
 
-        // Remove from state
-        setExperiences(experiences.filter((_, i) => i !== index));
+        try {
+            console.log("Deleting experience with ID:", expToRemove.id);
+
+            const response = await fetch('/api/users/experience', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: expToRemove.id }),
+            });
+
+            console.log("Delete response status:", response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("API error response:", errorData);
+                throw new Error(errorData.error || 'Failed to delete experience');
+            }
+
+            // Remove from state
+            setExperiences(experiences.filter((_, i) => i !== index));
+            console.log("Experience removed successfully");
+
+        } catch (err: any) {
+            console.error('Error deleting experience:', err);
+            setError(err.message || 'Failed to delete experience. Please try again.');
+        }
     };
 
     const handleExperienceChange = (field: keyof Experience, value: string) => {
@@ -244,39 +287,70 @@ export default function ProfileForm() {
         if (!currentExperience) return;
 
         try {
-            // 1. Send to backend FIRST
+            setError(null);
+
+            // Validate required fields
+            if (!currentExperience.jobTitle || !currentExperience.company || !currentExperience.startDate) {
+                setError("Please fill in all required fields: Job Title, Company, and Start Date");
+                return;
+            }
+
+            // Format dates for API
+            const formattedExperience = {
+                ...currentExperience,
+                startDate: formatDate(currentExperience.startDate),
+                endDate: currentExperience.endDate ? formatDate(currentExperience.endDate) : ''
+            };
+
+            console.log("Saving experience:", formattedExperience);
+
+            // Determine if this is a create or update operation
+            const isUpdate = editingExperienceIndex !== null && experiences[editingExperienceIndex]?.id;
+            const method = isUpdate ? 'PUT' : 'POST';
+
             const response = await fetch('/api/users/experience', {
-                method: editingExperienceIndex !== null ? 'PUT' : 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentExperience)
+                body: JSON.stringify(formattedExperience)
             });
+
+            console.log("Response status:", response.status);
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Save failed');
+                console.error("API error response:", errorData);
+                throw new Error(errorData.error || 'Save failed');
             }
 
             const savedData = await response.json();
+            console.log("Saved experience data:", savedData);
 
-            // 2. Update state with confirmed data
+            // Process the dates back to display format
+            const processedExperience = {
+                ...savedData,
+                startDate: displayDate(savedData.startDate),
+                endDate: displayDate(savedData.endDate)
+            };
+
+            // Update state with processed data
             setExperiences(prev => {
                 const newExperiences = [...prev];
                 if (editingExperienceIndex !== null) {
-                    newExperiences[editingExperienceIndex] = savedData;
+                    newExperiences[editingExperienceIndex] = processedExperience;
                 } else {
-                    newExperiences.push(savedData);
+                    newExperiences.push(processedExperience);
                 }
                 return newExperiences;
             });
 
-            // 3. Cleanup
+            // Cleanup form state
             setCurrentExperience(null);
             setEditingExperienceIndex(null);
             setShowExperienceForm(false);
 
         } catch (err: any) {
-            console.error('Save failed:', err);
-            setError(err.message);
+            console.error('Experience save failed:', err);
+            setError(err.message || "Failed to save experience");
         }
     };
 
@@ -338,16 +412,16 @@ export default function ProfileForm() {
 
         try {
 
-            const formattedBody = {
+            const formattedEducation = {
                 ...currentEducation,
-                startDate: currentEducation.startDate.replace(/-/g, ''),
-                endDate: currentEducation.endDate.replace(/-/g, '')
+                startDate: formatDate(currentEducation.startDate),
+                endDate: formatDate(currentEducation.endDate),
             };
 
             const response = await fetch('/api/users/education', {
                 method: editingEducationIndex !== null ? 'PUT' : 'POST', // Use POST for new entries
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formattedBody) // Send single object, NOT array
+                body: JSON.stringify(formattedEducation) // Send single object, NOT array
             });
 
             if (!response.ok) {
@@ -507,6 +581,55 @@ export default function ProfileForm() {
         }
     };
 
+    const formatDate = (date: string): string => {
+        if (!date) return '';
+
+        // If it's month input (YYYY-MM format from <input type="month">), 
+        // we need to convert it to a full date for the API
+        if (/^\d{4}-\d{2}$/.test(date)) {
+            // Convert YYYY-MM to YYYY-MM-DD by adding the first day of the month
+            return `${date}-01`;
+        }
+
+        // Try to parse as date
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+            console.error(`Invalid date: ${date}`);
+            return ''; // Return empty to avoid breaking things
+        }
+
+        // Format as YYYY-MM-DD for API
+        const year = parsedDate.getFullYear();
+        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(parsedDate.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const displayDate = (apiDate: string): string => {
+        if (!apiDate) return '';
+
+        // If already in YYYY-MM format
+        if (/^\d{4}-\d{2}$/.test(apiDate)) {
+            return apiDate;
+        }
+
+        // If in YYYY-MM-DD format, strip the day
+        if (/^\d{4}-\d{2}-\d{2}$/.test(apiDate)) {
+            return apiDate.substring(0, 7);
+        }
+
+        // Parse date and format
+        const parsedDate = new Date(apiDate);
+        if (isNaN(parsedDate.getTime())) {
+            return ''; // Invalid date
+        }
+
+        const year = parsedDate.getFullYear();
+        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    };
+
+
     const triggerFileInput = () => {
         fileInputRef.current?.click();
     };
@@ -526,15 +649,7 @@ export default function ProfileForm() {
                     <label htmlFor="name" className="block text-lg font-medium mb-3">
                         Name
                     </label>
-                    <FormInput
-                        id="name"
-                        name="name"
-                        placeholder="Full Name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        aria-label="Name"
-                        className="h-14 text-lg rounded-lg"
-                    />
+                    <FormInput id="name" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} aria-label="Name" className="h-14 text-lg rounded-lg" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
@@ -542,29 +657,14 @@ export default function ProfileForm() {
                         <label htmlFor="email" className="block text-lg font-medium mb-3">
                             Email
                         </label>
-                        <FormInput
-                            id="email"
-                            name="email"
-                            placeholder="example@gmail.com"
-                            value={formData.email}
-                            onChange={handleChange}
-                            type="email"
-                            className="h-14 text-lg rounded-lg"
-                        />
+                        <FormInput id="email" name="email" placeholder="example@gmail.com" value={formData.email} onChange={handleChange} type="email" className="h-14 text-lg rounded-lg" />
                     </div>
 
                     <div>
                         <label htmlFor="phone" className="block text-lg font-medium mb-3">
                             Phone
                         </label>
-                        <FormInput
-                            id="phone"
-                            name="phone"
-                            placeholder="+1234567890"
-                            value={formData.phone || ""}
-                            onChange={handleChange}
-                            className="h-14 text-lg rounded-lg"
-                        />
+                        <FormInput id="phone" name="phone" placeholder="+1234567890" value={formData.phone || ""} onChange={handleChange} className="h-14 text-lg rounded-lg" />
                     </div>
                 </div>
 
@@ -575,21 +675,10 @@ export default function ProfileForm() {
                     {existingCv && (
                         <div className="p-4 rounded-lg bg-white border border-gray-300">
                             <div className="flex items-center gap-3">
-                                <input
-                                    type="radio"
-                                    name="cv-choice"
-                                    checked={selectedCv === 'existing'}
-                                    onChange={() => setSelectedCv('existing')}
-                                    className="w-5 h-5 text-red-600"
-                                />
+                                <input type="radio" name="cv-choice" checked={selectedCv === 'existing'} onChange={() => setSelectedCv('existing')} className="w-5 h-5 text-red-600" />
                                 <div className="flex-1">
                                     <span className="text-gray-600">Saved Resume: </span>
-                                    <a
-                                        href={existingCv.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-red-600 hover:underline"
-                                    >
+                                    <a href={existingCv.url} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline" >
                                         {existingCv.name}
                                     </a>
                                 </div>
@@ -600,14 +689,7 @@ export default function ProfileForm() {
                     {/* New CV Upload */}
                     <div className="p-4 rounded-lg bg-white border border-gray-300">
                         <div className="flex items-center gap-3 mb-3">
-                            <input
-                                type="radio"
-                                name="cv-choice"
-                                checked={selectedCv === 'new'}
-                                onChange={() => setSelectedCv('new')}
-                                className="w-5 h-5 text-red-600"
-                                disabled={!newCvFile}
-                            />
+                            <input type="radio" name="cv-choice" checked={selectedCv === 'new'} onChange={() => setSelectedCv('new')} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
                             <label className="text-gray-600">Upload New Resume:</label>
                         </div>
 
@@ -619,12 +701,7 @@ export default function ProfileForm() {
                                     <span className="text-gray-500">No file selected</span>
                                 )}
                             </div>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={triggerFileInput}
-                                className="bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg"
-                            >
+                            <Button type="button" variant="secondary" onClick={triggerFileInput} className="bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg" >
                                 Choose File
                             </Button>
                         </div>
@@ -633,11 +710,7 @@ export default function ProfileForm() {
                     {/* Experience section - just a button */}
                     <div className="mt-8 flex justify-between items-center">
                         <h3 className="text-2xl font-semibold text-gray-800">Professional Experience</h3>
-                        <Button
-                            type="button"
-                            onClick={() => setShowExperiencePopup(true)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
+                        <Button type="button" onClick={() => setShowExperiencePopup(true)} className="bg-red-600 hover:bg-red-700 text-white" >
                             Manage Experience ({experiences.length})
                         </Button>
                     </div>
@@ -645,11 +718,7 @@ export default function ProfileForm() {
                     {/* Education section - just a button */}
                     <div className="mt-6 flex justify-between items-center">
                         <h3 className="text-2xl font-semibold text-gray-800">Education</h3>
-                        <Button
-                            type="button"
-                            onClick={() => setShowEducationPopup(true)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
+                        <Button type="button" onClick={() => setShowEducationPopup(true)} className="bg-red-600 hover:bg-red-700 text-white" >
                             Manage Education ({educations.length})
                         </Button>
                     </div>
@@ -663,21 +732,13 @@ export default function ProfileForm() {
             )}
 
             <div className="pt-8">
-                <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg"
-                >
+                <Button type="submit" disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg" >
                     {isLoading ? "Updating..." : "Update"}
                 </Button>
             </div>
 
             {/* Experience Popup */}
-            <Popup
-                isOpen={showExperiencePopup}
-                onClose={() => setShowExperiencePopup(false)}
-                title="Professional Experience"
-            >
+            <Popup isOpen={showExperiencePopup} onClose={() => setShowExperiencePopup(false)} title="Professional Experience">
                 {showExperienceForm ? (
                     <ExperienceForm />
                 ) : (
@@ -686,19 +747,11 @@ export default function ProfileForm() {
                             <p className="text-gray-500 text-center py-4">No experiences added yet.</p>
                         ) : (
                             experiences.map((experience, index) => (
-                                <ExperienceListItem
-                                    key={index}
-                                    experience={experience}
-                                    index={index}
-                                />
+                                <ExperienceListItem key={index} experience={experience} index={index} />
                             ))
                         )}
                         <div className="flex justify-center mt-4">
-                            <Button
-                                type="button"
-                                onClick={addExperience}
-                                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-                            >
+                            <Button type="button" onClick={addExperience} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" >
                                 <Plus size={18} /> Add New Experience
                             </Button>
                         </div>
@@ -707,11 +760,7 @@ export default function ProfileForm() {
             </Popup>
 
             {/* Education Popup */}
-            <Popup
-                isOpen={showEducationPopup}
-                onClose={() => setShowEducationPopup(false)}
-                title="Education History"
-            >
+            <Popup isOpen={showEducationPopup} onClose={() => setShowEducationPopup(false)} title="Education History">
                 {showEducationForm ? (
                     <EducationForm />
                 ) : (
@@ -720,19 +769,11 @@ export default function ProfileForm() {
                             <p className="text-gray-500 text-center py-4">No education entries added yet.</p>
                         ) : (
                             educations.map((education, index) => (
-                                <EducationListItem
-                                    key={index}
-                                    education={education}
-                                    index={index}
-                                />
+                                <EducationListItem key={index} education={education} index={index} />
                             ))
                         )}
                         <div className="flex justify-center mt-4">
-                            <Button
-                                type="button"
-                                onClick={addEducation}
-                                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-                            >
+                            <Button type="button" onClick={addEducation} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" >
                                 <Plus size={18} /> Add New Education
                             </Button>
                         </div>
