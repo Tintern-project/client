@@ -94,54 +94,48 @@ export default function ProfileForm() {
         }
     }, [user]);
 
+    const handleApiResponse = async (response: Response, errorMessage: string) => {
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.message || errorMessage);
+        }
+
+        try {
+            return await response.json();
+        } catch (e) {
+            console.error('Failed to parse JSON response:', e);
+            throw new Error('Invalid response from server');
+        }
+    };
+
+
     // Fetch experiences from API
     const fetchExperiences = async () => {
         try {
             console.log('Fetching experiences...');
+            setError(null);
+
             const response = await fetch('/api/users/experience');
-            console.log('Response status:', response.status);
+            const data = await handleApiResponse(response, 'Failed to fetch experiences');
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Failed to fetch experiences:', errorData);
-                setError(errorData.error || 'Failed to fetch experiences');
-                return;
-            }
+            // Process the data
+            const processedExperiences = Array.isArray(data.experiences)
+                ? data.experiences
+                : Array.isArray(data)
+                    ? data
+                    : [];
 
-            const data = await response.json();
-            console.log('Raw experiences data:', data);
+            // Format dates for display
+            const formattedExperiences = processedExperiences.map((exp: { startDate: string; endDate: string; }) => ({
+                ...exp,
+                startDate: displayDate(exp.startDate),
+                endDate: displayDate(exp.endDate)
+            }));
 
-            // Handle different response formats
-            if (data.experiences && Array.isArray(data.experiences)) {
-                console.log('Setting experiences from data.experiences array');
-
-                // Process dates for display
-                const processedExperiences = data.experiences.map(exp => ({
-                    ...exp,
-                    startDate: displayDate(exp.startDate),
-                    endDate: displayDate(exp.endDate)
-                }));
-
-                setExperiences(processedExperiences);
-            } else if (Array.isArray(data)) {
-                console.log('Setting experiences from direct array');
-
-                // Process dates for display
-                const processedExperiences = data.map(exp => ({
-                    ...exp,
-                    startDate: displayDate(exp.startDate),
-                    endDate: displayDate(exp.endDate)
-                }));
-
-                setExperiences(processedExperiences);
-            } else {
-                console.error('Unexpected data format:', data);
-                setExperiences([]);
-                setError('Received unexpected data format from server');
-            }
+            setExperiences(formattedExperiences);
         } catch (err) {
             console.error('Failed to fetch experiences:', err);
-            setError('Failed to fetch experiences. Please try again.');
+            setError(err.message || 'Failed to fetch experiences. Please try again.');
         }
     };
 
@@ -241,38 +235,57 @@ export default function ProfileForm() {
 
         // If the experience has no ID, just remove from state
         if (!expToRemove.id) {
+            console.log("No ID found, removing from local state only:", expToRemove);
             setExperiences(experiences.filter((_, i) => i !== index));
             return;
         }
 
         try {
-            console.log("Deleting experience with ID:", expToRemove.id);
+            console.log(`Attempting to delete experience with ID: ${expToRemove.id}`);
+            console.log("Full experience object being deleted:", expToRemove);
 
+            // Send the full experience object instead of just the ID
             const response = await fetch('/api/users/experience', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id: expToRemove.id }),
+                body: JSON.stringify(expToRemove),  // Send the entire experience object
             });
 
-            console.log("Delete response status:", response.status);
+            console.log("DELETE response status:", response.status);
 
+            // Get the response text first to see what's coming back
+            const responseText = await response.text();
+            console.log("Raw DELETE response:", responseText);
+
+            // Try to parse as JSON if possible
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log("Parsed DELETE response data:", data);
+            } catch (e) {
+                console.error("Failed to parse response as JSON:", e);
+            }
+
+            // Check if the request was successful
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error("API error response:", errorData);
-                throw new Error(errorData.error || 'Failed to delete experience');
+                console.error("DELETE failed with status:", response.status);
+                console.error("Error details:", data?.error || data?.message || responseText);
+                throw new Error(data?.error || data?.message || `Failed to delete experience (status: ${response.status})`);
             }
 
             // Remove from state
             setExperiences(experiences.filter((_, i) => i !== index));
             console.log("Experience removed successfully");
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('Error deleting experience:', err);
-            setError(err.message || 'Failed to delete experience. Please try again.');
+            console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace available');
+            setError(err instanceof Error ? err.message : 'Failed to delete experience. Please try again.');
         }
     };
+
 
     const handleExperienceChange = (field: keyof Experience, value: string) => {
         if (currentExperience) {
@@ -314,8 +327,6 @@ export default function ProfileForm() {
                 body: JSON.stringify(formattedExperience)
             });
 
-            console.log("Response status:", response.status);
-
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("API error response:", errorData);
@@ -334,12 +345,14 @@ export default function ProfileForm() {
 
             // Update state with processed data
             setExperiences(prev => {
-                const newExperiences = [...prev];
-                if (editingExperienceIndex !== null) {
-                    newExperiences[editingExperienceIndex] = processedExperience;
-                } else {
-                    newExperiences.push(processedExperience);
+                // For new entries, add to the list
+                if (editingExperienceIndex === null) {
+                    return [...prev, processedExperience];
                 }
+
+                // For updates, replace the existing entry
+                const newExperiences = [...prev];
+                newExperiences[editingExperienceIndex] = processedExperience;
                 return newExperiences;
             });
 
@@ -348,10 +361,17 @@ export default function ProfileForm() {
             setEditingExperienceIndex(null);
             setShowExperienceForm(false);
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('Experience save failed:', err);
             setError(err.message || "Failed to save experience");
         }
+
+        setShowExperienceForm(false);
+        // You might also want to close the popup if this was a new entry
+        if (editingExperienceIndex === null) {
+            setShowExperiencePopup(false);
+        }
+
     };
 
     // Education Functions
@@ -376,25 +396,21 @@ export default function ProfileForm() {
     const removeEducation = async (index: number) => {
         const eduToRemove = educations[index];
 
-        // If entry has no ID, just remove from state
-        if (!eduToRemove.id) {
-            setEducations(educations.filter((_, i) => i !== index));
-            return;
-        }
-
         try {
-            const response = await fetch('/api/users/education', {
+            const response = await fetch('/api/v1/users/education', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: eduToRemove.id })
+                body: JSON.stringify(eduToRemove) // Send full object
             });
 
-            if (!response.ok) throw new Error('Deletion failed');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Delete failed');
+            }
 
             setEducations(educations.filter((_, i) => i !== index));
         } catch (err) {
-            console.error('Delete failed:', err);
-            setError('Failed to delete education');
+            setError(err.message || 'Failed to delete education');
         }
     };
 
@@ -411,17 +427,22 @@ export default function ProfileForm() {
         if (!currentEducation) return;
 
         try {
+            // Validate required fields
+            if (!currentEducation.degree || !currentEducation.university || !currentEducation.startDate) {
+                setError("Please fill in all required fields: Degree, University, and Start Date");
+                return;
+            }
 
             const formattedEducation = {
                 ...currentEducation,
                 startDate: formatDate(currentEducation.startDate),
-                endDate: formatDate(currentEducation.endDate),
+                endDate: currentEducation.endDate ? formatDate(currentEducation.endDate) : ''
             };
 
             const response = await fetch('/api/users/education', {
-                method: editingEducationIndex !== null ? 'PUT' : 'POST', // Use POST for new entries
+                method: editingEducationIndex !== null ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formattedEducation) // Send single object, NOT array
+                body: JSON.stringify(formattedEducation)
             });
 
             if (!response.ok) {
@@ -429,27 +450,41 @@ export default function ProfileForm() {
                 throw new Error(errorData.message || 'Save failed');
             }
 
-            // 3. Update state with the saved data (including new ID)
+            // Get the saved data from API
             const savedData = await response.json();
 
+            // Process the dates back to display format
+            const processedEducation = {
+                ...savedData,
+                startDate: displayDate(savedData.startDate),
+                endDate: displayDate(savedData.endDate)
+            };
+
+            // Update state with processed data
             setEducations(prev => {
-                const newEducations = [...prev];
                 if (editingEducationIndex !== null) {
-                    newEducations[editingEducationIndex] = savedData;
+                    const newEducations = [...prev];
+                    newEducations[editingEducationIndex] = processedEducation;
+                    return newEducations;
                 } else {
-                    newEducations.push(savedData);
+                    return [...prev, processedEducation];
                 }
-                return newEducations;
             });
 
-            // 4. Reset form
+            // Reset form
             setCurrentEducation(null);
             setEditingEducationIndex(null);
             setShowEducationForm(false);
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('Save failed:', err);
             setError(err.message || 'Failed to save education');
+        }
+
+        setShowEducationForm(false);
+        // You might also want to close the popup if this was a new entry
+        if (editingEducationIndex === null) {
+            setShowEducationPopup(false);
         }
     };
 
