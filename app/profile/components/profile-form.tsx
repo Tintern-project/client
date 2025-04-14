@@ -160,13 +160,18 @@ export default function ProfileForm() {
     useEffect(() => {
         const fetchExistingCv = async () => {
             try {
-                const response = await fetch('/api/users/resume');
+                const response = await fetch('/api/v1/users/resume');
                 if (response.ok) {
                     const data = await response.json();
+                    console.log("Resume data:", data);
                     setExistingCv({
                         name: data.fileName,
-                        url: data.url // Adjust according to your API response
+                        url: data.url
                     });
+                    // Default selection to existing CV when one exists
+                    setSelectedCv('existing');
+                } else {
+                    console.error("Failed to fetch resume:", response.status, response.statusText);
                 }
             } catch (err) {
                 console.error('Failed to fetch CV:', err);
@@ -180,7 +185,7 @@ export default function ProfileForm() {
         const fileList = e.target.files;
         if (fileList?.[0]) {
             setNewCvFile(fileList[0]);
-            setSelectedCv('new');
+            setSelectedCv('new'); // Auto-select the new CV when uploaded
         }
     };
 
@@ -189,7 +194,7 @@ export default function ProfileForm() {
             const formData = new FormData();
             formData.append("file", file);
 
-            const response = await fetch("/api/users/resume", {
+            const response = await fetch("/api/v1/users/resume", { // Update to v1 prefix
                 method: "POST",
                 body: formData,
             });
@@ -606,9 +611,8 @@ export default function ProfileForm() {
                 const data = await handleCvUpload(newCvFile);
                 setExistingCv({ name: data.fileName, url: data.url });
                 setNewCvFile(null);
+                setSelectedCv('existing'); // Reset selection after successful upload
             }
-
-            // No need to save experiences/educations here as they're saved on each edit
 
             alert("Profile updated successfully!");
         } catch (err: any) {
@@ -681,24 +685,18 @@ export default function ProfileForm() {
 
             <div className="space-y-8">
                 <div>
-                    <label htmlFor="name" className="block text-lg font-medium mb-3">
-                        Name
-                    </label>
+                    <label htmlFor="name" className="block text-lg font-medium mb-3">Name</label>
                     <FormInput id="name" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} aria-label="Name" className="h-14 text-lg rounded-lg" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label htmlFor="email" className="block text-lg font-medium mb-3">
-                            Email
-                        </label>
+                        <label htmlFor="email" className="block text-lg font-medium mb-3">Email</label>
                         <FormInput id="email" name="email" placeholder="example@gmail.com" value={formData.email} onChange={handleChange} type="email" className="h-14 text-lg rounded-lg" />
                     </div>
 
                     <div>
-                        <label htmlFor="phone" className="block text-lg font-medium mb-3">
-                            Phone
-                        </label>
+                        <label htmlFor="phone" className="block text-lg font-medium mb-3">Phone</label>
                         <FormInput id="phone" name="phone" placeholder="+1234567890" value={formData.phone || ""} onChange={handleChange} className="h-14 text-lg rounded-lg" />
                     </div>
                 </div>
@@ -712,7 +710,7 @@ export default function ProfileForm() {
                             <div className="flex items-center gap-3">
                                 <input type="radio" name="cv-choice" checked={selectedCv === 'existing'} onChange={() => setSelectedCv('existing')} className="w-5 h-5 text-red-600" />
                                 <div className="flex-1">
-                                    <span className="text-gray-600">Saved Resume: </span>
+                                    <span className="text-gray-600">Current Resume: </span>
                                     <a href={existingCv.url} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline" >
                                         {existingCv.name}
                                     </a>
@@ -724,7 +722,7 @@ export default function ProfileForm() {
                     {/* New CV Upload */}
                     <div className="p-4 rounded-lg bg-white border border-gray-300">
                         <div className="flex items-center gap-3 mb-3">
-                            <input type="radio" name="cv-choice" checked={selectedCv === 'new'} onChange={() => setSelectedCv('new')} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
+                            <input type="radio" name="cv-choice" checked={selectedCv === 'new'} onChange={() => newCvFile ? setSelectedCv('new') : null} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
                             <label className="text-gray-600">Upload New Resume:</label>
                         </div>
 
