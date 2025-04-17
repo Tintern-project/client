@@ -371,7 +371,7 @@ export default function ProfileForm() {
             // Create a clean processed experience - use a consistent approach to ID
             const processedExperience = {
                 // For updates, maintain the same ID to avoid duplication
-                id: isUpdate ? currentExperience.id : (savedData.id || savedData._id),
+                id: isUpdate ? currentExperience.id : (savedData.id || savedData._id || (savedData.experience && (savedData.experience.id || savedData.experience._id))),
                 jobTitle: savedData.jobTitle || currentExperience.jobTitle,
                 company: savedData.company || currentExperience.company,
                 startDate: displayDate(savedData.startDate || currentExperience.startDate),
@@ -397,6 +397,11 @@ export default function ProfileForm() {
             setCurrentExperience(null);
             setEditingExperienceIndex(null);
             setShowExperienceForm(false);
+
+            setTimeout(() => {
+                fetchExperiences(); // update without refresh :DDDDDDDDDDD (Forgot to add it)
+            }, 300);
+
         } catch (err) {
             console.error('Experience save failed:', err);
             setError(err.message || "Failed to save experience");
@@ -667,7 +672,7 @@ export default function ProfileForm() {
             // Process the education with proper ID handling
             const processedEducation = {
                 // For updates, maintain the same ID to avoid duplication
-                id: isUpdate ? currentEducation.id : (savedData.id || savedData._id),
+                id: isUpdate ? currentEducation.id : (savedData.id || savedData._id || (savedData.education && (savedData.education.id || savedData.education._id))),
                 degree: savedData.degree || currentEducation.degree,
                 educationLevel: savedData.educationLevel || currentEducation.educationLevel,
                 university: savedData.university || currentEducation.university,
@@ -692,6 +697,11 @@ export default function ProfileForm() {
             setCurrentEducation(null);
             setEditingEducationIndex(null);
             setShowEducationForm(false);
+
+            setTimeout(() => {
+                fetchEducations();
+            }, 300);
+
         } catch (err) {
             console.error('Education save failed:', err);
             setError(err instanceof Error ? err.message : 'Failed to save education');
