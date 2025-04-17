@@ -146,7 +146,6 @@ export default function ProfileForm() {
         }
     };
 
-
     // Fetch educations from API
     const fetchEducations = async () => {
         try {
