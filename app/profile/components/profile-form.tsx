@@ -59,7 +59,7 @@ const Popup = ({
 export default function ProfileForm() {
     const { user, updateProfile, isLoading, error: authError, refreshUserProfile } = useAuth();
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ name: "", email: "", phone: "", cv: false });
+    const [formData, setFormData] = useState({ name: "", email: "", phone: "", hasCV: false });
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [newCvFile, setNewCvFile] = useState<File | null>(null);
     const [selectedCv, setSelectedCv] = useState<'existing' | 'new'>('existing');
@@ -85,7 +85,7 @@ export default function ProfileForm() {
                 name: user.name || "",
                 email: user.email || "",
                 phone: user.phone || "",
-                cv: user.hasCV || false,
+                hasCV: user.hasCV || false,
             });
 
             // Fetch experiences and educations
