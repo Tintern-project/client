@@ -12,21 +12,23 @@ import Cookies from "js-cookie";
 import { apiClient } from "@/lib/api-client";
 
 type User = {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  profile_picture_url?: string;
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    profile_picture_url?: string;
+    hasCV?: boolean;
 };
 
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (userData: any) => Promise<void>;
-  logout: () => Promise<void>;
-  updateProfile: (userId: string, userData: any) => Promise<void>;
+    user: User | null;
+    isLoading: boolean;
+    error: string | null;
+    login: (email: string, password: string) => Promise<void>;
+    signup: (userData: any) => Promise<void>;
+    logout: () => Promise<void>;
+    updateProfile: (userId: string, userData: any) => Promise<void>;
+    refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data.userName,
         email: data.userEmail,
         phone: data.userPhone,
+        hasCV: data.hasCV || false,
       };
 
       // Store user in cookie and state
@@ -197,7 +200,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+    };
+
+    const refreshUserProfile = async () => {
+        if (!user?.id) return;
+
+        setIsLoading(true);
+        try {
+            const profileData = await apiClient('/users/my-profile', {
+                method: 'GET',
+            });
+
+            // Update the user state with fresh data including hasCV status
+            const refreshedUserData = {
+                ...user,
+                ...profileData,
+            };
+
+            setUser(refreshedUserData);
+            Cookies.set("user", JSON.stringify(refreshedUserData), {
+                expires: 7,
+                path: "/",
+                sameSite: "strict",
+            });
+        } catch (error) {
+            console.error("Failed to refresh user profile:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
   const value = {
     user,
@@ -207,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     logout,
     updateProfile,
+    refreshUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
