@@ -713,12 +713,12 @@ export default function ProfileForm() {
 
                 <div className="space-y-4">
                     <label className="block text-lg font-medium">CV</label>
-                    
+
                     <div className="rounded-lg border border-gray-300 overflow-hidden">
                         <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
                             <h3 className="text-lg font-medium text-gray-700">Resume Selection</h3>
                         </div>
-                        
+
                         <div className="p-4 space-y-4">
                             {/* Existing CV option */}
                             {user?.hasCV && (
@@ -738,11 +738,11 @@ export default function ProfileForm() {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* New CV Upload option */}
                             <div className="p-4 rounded-lg bg-white border border-gray-300">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <input type="radio" id="new-cv" name="cv-choice" checked={selectedCv === 'new'} onChange={() => newCvFile ? setSelectedCv('new') : null} className="w-5 h-5 text-red-600" disabled={!newCvFile}  />
+                                    <input type="radio" id="new-cv" name="cv-choice" checked={selectedCv === 'new'} onChange={() => newCvFile ? setSelectedCv('new') : null} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
                                     <label htmlFor="new-cv" className="text-gray-600">
                                         {user?.hasCV ? "Upload New Resume:" : "Upload Resume:"}
                                     </label>
