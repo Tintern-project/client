@@ -107,8 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
 
-      // Redirect to profile
-      router.push("/profile");
+      // Redirect to home
+      router.push("/");
     } catch (error: any) {
       setError(error.message);
       console.error("Login failed:", error);
