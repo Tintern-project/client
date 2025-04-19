@@ -2,7 +2,6 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
-import Cookies from "js-cookie"
 import { apiClient } from "@/lib/api-client"
 
 interface SavedJobCardProps {
