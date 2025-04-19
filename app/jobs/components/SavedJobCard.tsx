@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
-import Cookies from "js-cookie"
+import { DidYouApplyModal } from '../components/DidYouApplyModal';
 import { apiClient } from "@/lib/api-client"
 interface SavedJobCardProps {
   id: string
@@ -16,57 +16,77 @@ interface SavedJobCardProps {
   onDelete: (id: string) => void
 }
 
-const SavedJobCard: React.FC<SavedJobCardProps> = ({
-  id,
-  title,
-  company,
-  location,
-  industry,
-  description,
-  requirements,
-  applicationLink,
-  onDelete,
-}) => {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+    const SavedJobCard: React.FC<SavedJobCardProps> = ({
+      id,
+      title,
+      company,
+      location,
+      industry,
+      description,
+      requirements,
+      applicationLink,
+      onDelete,
+    }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [showApplyModal, setShowApplyModal] = useState(false) // Add this state
+    const [isApplying, setIsApplying] = useState(false); // Add loading state
 
-  // Set a character limit for the description
-  const MAX_DESCRIPTION_LENGTH = 150
-  const isDescriptionLong = description?.length > MAX_DESCRIPTION_LENGTH
+    // Set a character limit for the description
+    const MAX_DESCRIPTION_LENGTH = 150
+    const isDescriptionLong = description?.length > MAX_DESCRIPTION_LENGTH
 
-  // Format the requirements string into an array for display
-  const requirementsList =
+    // Format the requirements string into an array for display
+    const requirementsList =
     requirements?.split(/[,;]/).filter((req) => req.trim().length > 0) || []
 
-  const toggleDescription = () => {
+    const toggleDescription = () => {
     setIsExpanded(!isExpanded)
-  }
-  const handleDelete = async () => {
+    }
+
+    const handleDelete = async () => {
     try {
-      setIsDeleting(true);
+        setIsDeleting(true);
       
-      // Use apiClient for consistent request handling
-      await apiClient(`/jobs/save/delete/${id}`, {
+        // Use apiClient for consistent request handling
+        await apiClient(`/jobs/save/delete/${id}`, {
         method: "DELETE",
-      });
+        });
   
-      console.log(`Deleted job: ${title} at ${company}`);
-      onDelete(id); // Update parent state to remove the job card
+        console.log(`Deleted job: ${title} at ${company}`);
+        onDelete(id); // Update parent state to remove the job card
     } catch (err) {
-      console.error("Error deleting job:", err);
-      // Error handling is already centralized in apiClient (including 401 redirect)
+        console.error("Error deleting job:", err);
+        // Error handling is already centralized in apiClient (including 401 redirect)
     } finally {
-      setIsDeleting(false);
+        setIsDeleting(false);
     }
-  };
+    };
   
-  const handleApply = () => {
-    if (applicationLink) {
-      window.open(applicationLink, "_blank")
-    } else {
-      console.error("No application link provided")
+    const handleApply = () => {
+        setShowApplyModal(true)
+        if (applicationLink) {
+            window.open(applicationLink, "_blank")
+        } else {
+            console.error("No application link provided")
+        }
     }
-  }
+
+    const handleConfirmApply = async () => {
+        try {
+            setIsApplying(true);
+
+            await apiClient(`/application`, {
+                method: "POST",
+                data: { jobId: id } // Adjust the body structure according to your API requirements
+            });
+        } catch (err: any) {
+            alert("You have already applied to this job!\nCheck your JobApplications in your profile.");
+        } finally {
+            setIsApplying(false);
+            setShowApplyModal(false);
+        }
+    };
 
   return (
     <div className="bg-[#d9d9d9] rounded-md p-6 flex justify-between items-start">
@@ -118,20 +138,14 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
         </div>
       </div>
       <div className="flex flex-col gap-3">
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="px-6 py-2 bg-[#2c2c2c] text-white rounded-md hover:bg-[#1e1e1e] transition-colors"
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
+        <button onClick={handleDelete} disabled={isDeleting} className="px-6 py-2 bg-[#2c2c2c] text-white rounded-md hover:bg-[#1e1e1e] transition-colors" >
+            {isDeleting ? "Deleting..." : "Delete"}
         </button>
-        <button
-          onClick={handleApply}
-          className="px-6 py-2 bg-[#963434] text-white rounded-md hover:bg-[#7a2a2a] transition-colors"
-        >
-          Apply
+              <button onClick={handleApply} disabled={isApplying} className="p-3 text-base bg-orange-800 rounded-lg transition-all cursor-pointer border-[none] duration-[0.2s] ease-[ease] text-neutral-100 w-[122px]" >
+            {isApplying ? "Applying..." : "Apply"}
         </button>
       </div>
+      <DidYouApplyModal open={showApplyModal} onClose={() => setShowApplyModal(false)} onYes={handleConfirmApply}/>
     </div>
   )
 }

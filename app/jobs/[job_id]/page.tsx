@@ -4,63 +4,90 @@ import { useState, useEffect } from "react"
 import { BookmarkIcon, BriefcaseIcon, MapPinIcon, CalendarIcon, ClockIcon } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import { useParams } from "next/navigation"
+import { DidYouApplyModal } from '../components/DidYouApplyModal';
 
 export default function JobDetail() {
-  const [saved, setSaved] = useState(false)
-  const [job, setJob] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  
-  const params = useParams()
-  const jobId = params.job_id as string
+    const [saved, setSaved] = useState(false)
+    const [job, setJob] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [showApplyModal, setShowApplyModal] = useState(false)
+    const [isApplying, setIsApplying] = useState(false)
 
-  useEffect(() => {
-    const fetchJobDetails = async () => {
-      try {
-        setLoading(true)
-        const data = await apiClient(`/jobs/${jobId}`)
-        setJob(data)
-      } catch (err) {
-        console.error("Error fetching job details:", err)
-        setError("Failed to load job details")
-      } finally {
-        setLoading(false)
-      }
+    const params = useParams()
+    const jobId = params.job_id as string
+
+    useEffect(() => {
+        const fetchJobDetails = async () => {
+            try {
+            setLoading(true)
+            const data = await apiClient(`/jobs/${jobId}`)
+            setJob(data)
+            } catch (err) {
+            console.error("Error fetching job details:", err)
+            setError("Failed to load job details")
+            } finally {
+            setLoading(false)
+            }
+        }
+
+        if (jobId) {
+            fetchJobDetails()
+        }
+    }, [jobId])
+
+    const handleSaveJob = async () => {
+        try {
+          await apiClient(`/jobs/save/${jobId}`, {
+            method: "POST",
+          })
+          setSaved(true)
+          alert("Job saved to favorites!")
+        } catch (error) {
+          console.error("Error saving job:", error)
+          alert("Failed to save job. Please try again.")
+        }
     }
 
-    if (jobId) {
-      fetchJobDetails()
+    const handleApply = () => {
+        setShowApplyModal(true)
+        if (job?.applicationLink) {
+            window.open(job.applicationLink, "_blank")
+        } else {
+            console.error("No application link provided")
+        }
     }
-  }, [jobId])
 
-  const handleSaveJob = async () => {
-    try {
-      await apiClient(`/jobs/save/${jobId}`, {
-        method: "POST",
-      })
-      setSaved(true)
-      alert("Job saved to favorites!")
-    } catch (error) {
-      console.error("Error saving job:", error)
-      alert("Failed to save job. Please try again.")
+    const handleConfirmApply = async () => {
+        try {
+            setIsApplying(true)
+            await apiClient(`/application`, {
+                method: "POST",
+                data: { jobId }
+            })
+        } catch (err: any) {
+            alert("You have already applied to this job!\nCheck your JobApplications in your profile.")
+        } finally {
+            setIsApplying(false)
+            setShowApplyModal(false)
+        }
     }
-  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#1a1a1a] text-white p-6 flex items-center justify-center">
-        <p className="text-xl">Loading job details...</p>
-      </div>
-    )
-  }
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#1a1a1a] text-white p-6 flex items-center justify-center">
+            <p className="text-xl">Loading job details...</p>
+            </div>
+        )
+    }
 
-  if (error || !job) {
-    return (
-      <div className="min-h-screen bg-[#1a1a1a] text-white p-6 flex items-center justify-center">
-        <p className="text-xl text-red-500">{error || "Job not found"}</p>
-      </div>
-    )
-  }
+    if (error || !job) {
+        return (
+            <div className="min-h-screen bg-[#1a1a1a] text-white p-6 flex items-center justify-center">
+            <p className="text-xl text-red-500">{error || "Job not found"}</p>
+            </div>
+        )
+    }
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white p-6">
@@ -124,21 +151,20 @@ export default function JobDetail() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <button
+                <button
                 className={`flex items-center justify-center gap-2 px-6 py-3 rounded font-medium text-white transition-colors ${
-                  saved ? "bg-green-600 hover:bg-green-700" : "bg-gray-800 hover:bg-gray-900"
-                }`}
-                onClick={handleSaveJob}
-              >
+                    saved ? "bg-green-600 hover:bg-green-700" : "bg-gray-800 hover:bg-gray-900"
+                }`} onClick={handleSaveJob} >
                 <BookmarkIcon className="h-5 w-5" />
                 {saved ? "Saved" : "Save Job"}
-              </button>
-              <button className="flex items-center justify-center gap-2 px-6 py-3 rounded font-medium text-white transition-colors bg-[#a52a2a] hover:bg-[#8b2323]">
-                Apply
-              </button>
+                </button>
+                <button className="flex items-center justify-center gap-2 px-6 py-3 rounded font-medium text-white transition-colors bg-[#a52a2a] hover:bg-[#8b2323]" onClick={handleApply} disabled={isApplying} >
+                    {isApplying ? "Applying..." : "Apply"}
+                </button>
             </div>
           </div>
         </div>
+        <DidYouApplyModal open={showApplyModal} onClose={() => setShowApplyModal(false)} onYes={handleConfirmApply} />
       </div>
     </div>
   )
