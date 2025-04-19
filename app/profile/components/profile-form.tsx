@@ -30,6 +30,8 @@ interface Application {
     jobId: string;
     status: string;
     createdAt: string;
+    jobTitle?: string;
+    company?: string;
 }
 
 // POPUP FOR LISTS
@@ -184,8 +186,35 @@ export default function ProfileForm() {
             const response = await apiClient('/application');
             const rawData = response.data || response;
             const applicationsArray = Array.isArray(rawData) ? rawData : [];
-            console.log('Processed applications:', applicationsArray);
-            setApplications(applicationsArray);
+
+            // For each application, fetch the job details
+            const applicationsWithJobDetails = await Promise.all(
+                applicationsArray.map(async (app) => {
+                    try {
+                        // Fetch job details using the jobId
+                        const jobResponse = await apiClient(`/jobs/${app.jobId}`);
+                        const jobData = jobResponse.data || jobResponse;
+
+                        // Merge application with job details
+                        return {
+                            ...app,
+                            jobTitle: jobData.title || 'Unknown Job',
+                            company: jobData.company || 'Unknown Company'
+                        };
+                    } catch (err) {
+                        console.error(`Failed to fetch details for job ${app.jobId}:`, err);
+                        // Return application with placeholder values
+                        return {
+                            ...app,
+                            jobTitle: 'Job details unavailable',
+                            company: 'N/A'
+                        };
+                    }
+                })
+            );
+
+            console.log('Applications with job details:', applicationsWithJobDetails);
+            setApplications(applicationsWithJobDetails);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch applications. Please try again.');
             console.error('Application fetch error:', err);
@@ -647,7 +676,10 @@ export default function ProfileForm() {
     const ApplicationListItem = ({ application }: { application: Application }) => (
         <div className="p-4 border rounded-lg bg-white mb-4 shadow-sm">
             <div className="mb-2">
-                <h4 className="font-semibold text-lg text-red-600">{application.jobId}</h4>
+                <h4 className="font-semibold text-lg text-red-600">{application.jobTitle}</h4>
+            </div>
+            <div className="mb-2">
+                <span className="text-gray-700 font-medium">Company:</span> {application.company}
             </div>
             <div className="flex gap-6 mb-2 text-sm text-gray-600">
                 <span>Status: <span className="font-medium">{application.status}</span></span>
@@ -655,6 +687,7 @@ export default function ProfileForm() {
             </div>
         </div>
     );
+
 
     // submiting update
     const handleSubmit = async (e: React.FormEvent) => {
