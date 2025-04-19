@@ -24,7 +24,7 @@ interface Education {
     endDate: string;
 }
 
-// Popup component for displaying lists
+// POPUP FOR LISTS
 const Popup = ({
     isOpen,
     onClose,
@@ -57,11 +57,10 @@ const Popup = ({
 };
 
 export default function ProfileForm() {
-    const { user, updateProfile, isLoading, error: authError } = useAuth();
+    const { user, updateProfile, isLoading, error: authError, refreshUserProfile } = useAuth();
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+    const [formData, setFormData] = useState({ name: "", email: "", phone: "", hasCV: false });
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [existingCv, setExistingCv] = useState<{ name: string; url: string } | null>(null);
     const [newCvFile, setNewCvFile] = useState<File | null>(null);
     const [selectedCv, setSelectedCv] = useState<'existing' | 'new'>('existing');
     const [experiences, setExperiences] = useState<Experience[]>([]);
@@ -86,11 +85,17 @@ export default function ProfileForm() {
                 name: user.name || "",
                 email: user.email || "",
                 phone: user.phone || "",
+                hasCV: user.hasCV || false,
             });
 
             // Fetch experiences and educations
             fetchExperiences();
             fetchEducations();
+
+            if (user.hasCV) {
+                setSelectedCv('existing');
+            }
+            console.log("Initial hasCV value:", user.hasCV);
         }
     }, [user]);
 
@@ -108,27 +113,19 @@ export default function ProfileForm() {
         }
     };
 
-
     // Fetch experiences from API
     const fetchExperiences = async () => {
         try {
-            console.log('Fetching experiences...');
             setError(null);
 
             const response = await fetch('/api/users/experience');
             const data = await handleApiResponse(response, 'Failed to fetch experiences');
-
-            // Add debug logging
-            console.log('Raw API response:', data);
-
-            // Process the data - ensure we're getting IDs
             const processedExperiences = Array.isArray(data.experiences)
                 ? data.experiences
                 : Array.isArray(data)
                     ? data
                     : [];
 
-            // Format dates AND ensure ID exists
             const formattedExperiences = processedExperiences.map((exp: any) => ({
                 id: exp.id || exp._id, // Handle both "id" and MongoDB's "_id"
                 jobTitle: exp.jobTitle,
@@ -138,10 +135,8 @@ export default function ProfileForm() {
                 description: exp.description
             }));
 
-            console.log('Formatted experiences:', formattedExperiences);
             setExperiences(formattedExperiences);
         } catch (err) {
-            console.error('Failed to fetch experiences:', err);
             setError(err.message || 'Failed to fetch experiences. Please try again.');
         }
     };
@@ -156,9 +151,7 @@ export default function ProfileForm() {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to fetch educations');
             }
-
             const data = await response.json();
-            console.log('Raw education data:', data);
 
             // Process education data with proper ID mapping
             const processedEducations = (data.educations || data).map((edu: any) => ({
@@ -169,44 +162,18 @@ export default function ProfileForm() {
                 startDate: displayDate(edu.startDate),
                 endDate: displayDate(edu.endDate)
             }));
-
-            console.log('Processed educations:', processedEducations);
             setEducations(processedEducations);
 
         } catch (err) {
-            console.error('Failed to fetch educations:', err);
             setError(err instanceof Error ? err.message : 'Failed to fetch educations');
         }
     };
 
+    // Resume Realted Components
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
-
-    useEffect(() => {
-        const fetchExistingCv = async () => {
-            try {
-                const response = await fetch('/api/v1/users/resume');
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("Resume data:", data);
-                    setExistingCv({
-                        name: data.fileName,
-                        url: data.url
-                    });
-                    // Default selection to existing CV when one exists
-                    setSelectedCv('existing');
-                } else {
-                    console.error("Failed to fetch resume:", response.status, response.statusText);
-                }
-            } catch (err) {
-                console.error('Failed to fetch CV:', err);
-            }
-        };
-
-        if (user) fetchExistingCv();
-    }, [user]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
@@ -216,23 +183,30 @@ export default function ProfileForm() {
         }
     };
 
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
+    };
+
     const handleCvUpload = async (file: File) => {
         try {
+            // Create a FormData object to properly send the file
             const formData = new FormData();
             formData.append("file", file);
-
-            const response = await fetch("/api/v1/users/resume", { // Update to v1 prefix
+            // Use the correct API endpoint - needs to match your route handler
+            const response = await fetch("/api/users/resume", {
                 method: "POST",
+                // Don't set Content-Type here, the browser will set it correctly with the boundary
                 body: formData,
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to upload CV");
             }
-
+            // Get the updated user data including hasCV status
+            await refreshUserProfile();
             return await response.json();
         } catch (err: any) {
+            console.error("CV upload error:", err);
             throw err;
         }
     };
@@ -407,147 +381,6 @@ export default function ProfileForm() {
         }
     };
 
-    // Experience Form
-    const renderExperienceForm = () => (
-        <div className="space-y-4">
-            <h3 className="text-xl font-semibold">
-                {editingExperienceIndex !== null ? 'Edit Experience' : 'Add Experience'}
-            </h3>
-            <div className="space-y-4">
-                <FormInput
-                    label="Job Title"
-                    value={currentExperience?.jobTitle || ''}
-                    onChange={(e) => handleExperienceChange('jobTitle', e.target.value)}
-                    required
-                />
-
-                <FormInput
-                    label="Company"
-                    value={currentExperience?.company || ''}
-                    onChange={(e) => handleExperienceChange('company', e.target.value)}
-                    required
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <FormInput
-                        label="Start Date"
-                        type="month"
-                        value={currentExperience?.startDate || ''}
-                        onChange={(e) => handleExperienceChange('startDate', e.target.value)}
-                        required
-                    />
-                    <FormInput
-                        label="End Date"
-                        type="month"
-                        value={currentExperience?.endDate || ''}
-                        onChange={(e) => handleExperienceChange('endDate', e.target.value)}
-                    />
-                </div>
-
-                <div>
-                    <FormInput
-                        label="Description"
-                        value={currentExperience?.description || ''}
-                        onChange={(e) => handleExperienceChange('description', e.target.value)}
-                        textarea
-                        rows={3}
-                    />
-                </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowExperienceForm(false)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={saveExperienceEntry}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                    Save
-                </Button>
-            </div>
-        </div>
-    );
-
-    // Education Form
-    const renderEducationForm = () => (
-        <div className="space-y-4">
-            <h3 className="text-xl font-semibold">
-                {editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}
-            </h3>
-            <div className="space-y-4">
-                <FormInput
-                    label="Degree"
-                    value={currentEducation?.degree || ''}
-                    onChange={(e) => handleEducationChange('degree', e.target.value)}
-                    required
-                />
-
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Education Level
-                    </label>
-                    <select
-                        value={currentEducation?.educationLevel || 'highschool'}
-                        onChange={(e) => handleEducationChange('educationLevel', e.target.value)}
-                        className="mt-1 block w-full rounded-lg border border-gray-300 p-2 h-12 text-base"
-                    >
-                        <option value="highschool">High School</option>
-                        <option value="undergrad">Undergraduate</option>
-                        <option value="postgrad">Postgraduate</option>
-                        <option value="phd">PhD</option>
-                    </select>
-                </div>
-
-                <FormInput
-                    label="University/Institution"
-                    value={currentEducation?.university || ''}
-                    onChange={(e) => handleEducationChange('university', e.target.value)}
-                    required
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <FormInput
-                        label="Start Date"
-                        type="month"
-                        value={currentEducation?.startDate || ''}
-                        onChange={(e) => handleEducationChange('startDate', e.target.value)}
-                        required
-                    />
-                    <FormInput
-                        label="End Date"
-                        type="month"
-                        value={currentEducation?.endDate || ''}
-                        onChange={(e) => handleEducationChange('endDate', e.target.value)}
-                    />
-                </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowEducationForm(false)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={saveEducationEntry}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                    Save
-                </Button>
-            </div>
-        </div>
-    );
-
-
     // Education Functions
     const addEducation = () => {
         setCurrentEducation({
@@ -562,14 +395,10 @@ export default function ProfileForm() {
     };
 
     const editEducation = (index: number) => {
-        // Create a deep copy to avoid reference issues
         const eduToEdit = JSON.parse(JSON.stringify(educations[index]));
 
-        // Format dates properly
         eduToEdit.startDate = displayDate(eduToEdit.startDate);
         eduToEdit.endDate = displayDate(eduToEdit.endDate);
-
-        console.log("Editing education with ID:", eduToEdit.id);
 
         setCurrentEducation(eduToEdit);
         setEditingEducationIndex(index);
@@ -579,10 +408,8 @@ export default function ProfileForm() {
 
     const removeEducation = async (index: number) => {
         const eduToRemove = educations[index];
-        console.log('[DELETE Education] Removing:', eduToRemove);
 
         if (!eduToRemove.id) {
-            console.log('[DELETE Education] Local-only education removed');
             setEducations(prev => prev.filter((_, i) => i !== index));
             return;
         }
@@ -596,20 +423,14 @@ export default function ProfileForm() {
                 }
             });
 
-            console.log('[DELETE Education] Response status:', response.status);
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Delete failed');
             }
 
-            // Optimistic update with functional update
             setEducations(prev => prev.filter((_, i) => i !== index));
-
         } catch (err) {
-            console.error('[DELETE Education] Error:', err);
             setError(err instanceof Error ? err.message : 'Failed to delete education');
-            // Re-fetch to sync with server
             fetchEducations();
         }
     };
@@ -645,10 +466,7 @@ export default function ProfileForm() {
 
             // Remove ID from request body for updates
             const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedEducation) : formattedEducation;
-
             const token = localStorage.getItem('token');
-            console.log(`${method} Education - Request:`, { url, body: requestBody });
-
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -660,17 +478,10 @@ export default function ProfileForm() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error(`${method} Education - Error:`, errorText);
                 throw new Error(errorText || 'Save failed');
             }
-
-            // Get the saved data from response
             const savedData = await response.json();
-            console.log(`${method} Education - Response:`, savedData);
-
-            // Process the education with proper ID handling
             const processedEducation = {
-                // For updates, maintain the same ID to avoid duplication
                 id: isUpdate ? currentEducation.id : (savedData.id || savedData._id || (savedData.education && (savedData.education.id || savedData.education._id))),
                 degree: savedData.degree || currentEducation.degree,
                 educationLevel: savedData.educationLevel || currentEducation.educationLevel,
@@ -679,12 +490,8 @@ export default function ProfileForm() {
                 endDate: displayDate(savedData.endDate || currentEducation.endDate)
             };
 
-            console.log(`${method} Education - Processed for UI:`, processedEducation);
-
-            // Update the educations state with a more reliable approach
             setEducations(prev => {
                 if (isUpdate && editingEducationIndex !== null) {
-                    // Create a new array with the updated item at the specific index
                     const updatedEducations = [...prev];
                     updatedEducations[editingEducationIndex] = processedEducation;
                     return updatedEducations;
@@ -702,10 +509,64 @@ export default function ProfileForm() {
             }, 300);
 
         } catch (err) {
-            console.error('Education save failed:', err);
             setError(err instanceof Error ? err.message : 'Failed to save education');
         }
     };
+
+    // Experience Form
+    const renderExperienceForm = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold">
+                {editingExperienceIndex !== null ? 'Edit Experience' : 'Add Experience'}
+            </h3>
+            <div className="space-y-4">
+                <FormInput label="Job Title" value={currentExperience?.jobTitle || ''} onChange={(e) => handleExperienceChange('jobTitle', e.target.value)} required />
+                <FormInput label="Company" value={currentExperience?.company || ''} onChange={(e) => handleExperienceChange('company', e.target.value)} required />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormInput label="Start Date" type="month" value={currentExperience?.startDate || ''} onChange={(e) => handleExperienceChange('startDate', e.target.value)} required />
+                    <FormInput label="End Date" type="month" value={currentExperience?.endDate || ''} onChange={(e) => handleExperienceChange('endDate', e.target.value)} />
+                </div>
+
+                <div>
+                    <FormInput label="Description" value={currentExperience?.description || ''} onChange={(e) => handleExperienceChange('description', e.target.value)} textarea rows={3} />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setShowExperienceForm(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-800" > Cancel </Button>
+                <Button type="button" onClick={saveExperienceEntry} className="bg-red-600 hover:bg-red-700 text-white" > Save </Button>
+            </div>
+        </div>
+    );
+
+    // Education Form
+    const renderEducationForm = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold">
+                {editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}
+            </h3>
+            <div className="space-y-4">
+                <FormInput label="Degree" value={currentEducation?.degree || ''} onChange={(e) => handleEducationChange('degree', e.target.value)} required />
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700"> Education Level </label>
+                    <select value={currentEducation?.educationLevel || 'highschool'} onChange={(e) => handleEducationChange('educationLevel', e.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-2 h-12 text-base">
+                        <option value="highschool">High School</option>
+                        <option value="undergrad">Undergraduate</option>
+                        <option value="postgrad">Postgraduate</option>
+                        <option value="phd">PhD</option>
+                    </select>
+                </div>
+                <FormInput label="University/Institution" value={currentEducation?.university || ''} onChange={(e) => handleEducationChange('university', e.target.value)} required />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormInput label="Start Date" type="month" value={currentEducation?.startDate || ''} onChange={(e) => handleEducationChange('startDate', e.target.value)} required />
+                    <FormInput label="End Date" type="month" value={currentEducation?.endDate || ''} onChange={(e) => handleEducationChange('endDate', e.target.value)} />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setShowEducationForm(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-800" > Cancel </Button>
+                <Button type="button" onClick={saveEducationEntry} className="bg-red-600 hover:bg-red-700 text-white" > Save </Button>
+            </div>
+        </div>
+    );
 
     // Experience List Item for popup
     const ExperienceListItem = ({ experience, index }: { experience: Experience, index: number }) => (
@@ -767,13 +628,10 @@ export default function ProfileForm() {
         try {
             if (!user?.id) throw new Error("User ID not available");
 
-            // Update profile data
             await updateProfile(user.id, formData);
 
-            // Handle CV replacement if needed
             if (selectedCv === 'new' && newCvFile) {
                 const data = await handleCvUpload(newCvFile);
-                setExistingCv({ name: data.fileName, url: data.url });
                 setNewCvFile(null);
                 setSelectedCv('existing'); // Reset selection after successful upload
             }
@@ -787,14 +645,10 @@ export default function ProfileForm() {
     const formatDate = (date: string): string => {
         if (!date) return '';
 
-        // If it's month input (YYYY-MM format from <input type="month">), 
-        // we need to convert it to a full date for the API
         if (/^\d{4}-\d{2}$/.test(date)) {
-            // Convert YYYY-MM to YYYY-MM-DD by adding the first day of the month
             return `${date}-01`;
         }
 
-        // Try to parse as date
         const parsedDate = new Date(date);
         if (isNaN(parsedDate.getTime())) {
             console.error(`Invalid date: ${date}`);
@@ -811,17 +665,14 @@ export default function ProfileForm() {
     const displayDate = (apiDate: string): string => {
         if (!apiDate) return '';
 
-        // If already in YYYY-MM format
         if (/^\d{4}-\d{2}$/.test(apiDate)) {
             return apiDate;
         }
 
-        // If in YYYY-MM-DD format, strip the day
         if (/^\d{4}-\d{2}-\d{2}$/.test(apiDate)) {
             return apiDate.substring(0, 7);
         }
 
-        // Parse date and format
         const parsedDate = new Date(apiDate);
         if (isNaN(parsedDate.getTime())) {
             return ''; // Invalid date
@@ -830,11 +681,6 @@ export default function ProfileForm() {
         const year = parsedDate.getFullYear();
         const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
         return `${year}-${month}`;
-    };
-
-
-    const triggerFileInput = () => {
-        fileInputRef.current?.click();
     };
 
     if (!user) {
@@ -868,56 +714,64 @@ export default function ProfileForm() {
                 <div className="space-y-4">
                     <label className="block text-lg font-medium">CV</label>
 
-                    {/* Existing CV */}
-                    {existingCv && (
-                        <div className="p-4 rounded-lg bg-white border border-gray-300">
-                            <div className="flex items-center gap-3">
-                                <input type="radio" name="cv-choice" checked={selectedCv === 'existing'} onChange={() => setSelectedCv('existing')} className="w-5 h-5 text-red-600" />
-                                <div className="flex-1">
-                                    <span className="text-gray-600">Current Resume: </span>
-                                    <a href={existingCv.url} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline" >
-                                        {existingCv.name}
-                                    </a>
+                    <div className="rounded-lg border border-gray-300 overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+                            <h3 className="text-lg font-medium text-gray-700">Resume Selection</h3>
+                        </div>
+
+                        <div className="p-4 space-y-4">
+                            {/* Existing CV option */}
+                            {user?.hasCV && (
+                                <div className="p-4 rounded-lg bg-white border border-gray-300">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="radio"
+                                            id="existing-cv"
+                                            name="cv-choice"
+                                            checked={selectedCv === 'existing'}
+                                            onChange={() => setSelectedCv('existing')}
+                                            className="w-5 h-5 text-red-600"
+                                        />
+                                        <label htmlFor="existing-cv" className="flex-1">
+                                            <span className="text-gray-600">Latest Uploaded CV</span>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            )}
 
-                    {/* New CV Upload */}
-                    <div className="p-4 rounded-lg bg-white border border-gray-300">
-                        <div className="flex items-center gap-3 mb-3">
-                            <input type="radio" name="cv-choice" checked={selectedCv === 'new'} onChange={() => newCvFile ? setSelectedCv('new') : null} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
-                            <label className="text-gray-600">Upload New Resume:</label>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 h-14 text-lg rounded-lg border border-gray-200 px-3 flex items-center">
-                                {newCvFile ? (
-                                    <span className="truncate">{newCvFile.name}</span>
-                                ) : (
-                                    <span className="text-gray-500">No file selected</span>
-                                )}
+                            {/* New CV Upload option */}
+                            <div className="p-4 rounded-lg bg-white border border-gray-300">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <input type="radio" id="new-cv" name="cv-choice" checked={selectedCv === 'new'} onChange={() => newCvFile ? setSelectedCv('new') : null} className="w-5 h-5 text-red-600" disabled={!newCvFile} />
+                                    <label htmlFor="new-cv" className="text-gray-600">
+                                        {user?.hasCV ? "Upload New Resume:" : "Upload Resume:"}
+                                    </label>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex-1 h-14 text-lg rounded-lg border border-gray-200 px-3 flex items-center">
+                                        {newCvFile ? (
+                                            <span className="truncate">{newCvFile.name}</span>
+                                        ) : (
+                                            <span className="text-gray-500">No file selected</span>
+                                        )}
+                                    </div>
+                                    <Button type="button" variant="secondary" onClick={triggerFileInput} className="bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg" > Choose File </Button>
+                                </div>
+                                <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
                             </div>
-                            <Button type="button" variant="secondary" onClick={triggerFileInput} className="bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-lg" >
-                                Choose File
-                            </Button>
                         </div>
                     </div>
-
                     {/* Experience section - just a button */}
                     <div className="mt-8 flex justify-between items-center">
                         <h3 className="text-2xl font-semibold text-gray-800">Professional Experience</h3>
                         <Button type="button" onClick={() => setShowExperiencePopup(true)} className="bg-red-600 hover:bg-red-700 text-white" >
-                            Manage Experience ({experiences.length})
-                        </Button>
+                            Manage Experience ({experiences.length})</Button>
                     </div>
-
                     {/* Education section - just a button */}
                     <div className="mt-6 flex justify-between items-center">
                         <h3 className="text-2xl font-semibold text-gray-800">Education</h3>
                         <Button type="button" onClick={() => setShowEducationPopup(true)} className="bg-red-600 hover:bg-red-700 text-white" >
-                            Manage Education ({educations.length})
-                        </Button>
+                            Manage Education ({educations.length})</Button>
                     </div>
                 </div>
             </div>
