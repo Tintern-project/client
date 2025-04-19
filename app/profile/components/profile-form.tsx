@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { FormInput } from "@/app/profile/components/ui/form-input";
 import { Button } from "@/app/profile/components/ui/button";
 import { useAuth } from "@/app/context/auth-context";
+import { apiClient } from "@/lib/api-client"; // Import the apiClient
 import { X, Plus } from "lucide-react";
 
 interface Experience {
@@ -22,6 +23,13 @@ interface Education {
     university: string;
     startDate: string;
     endDate: string;
+}
+
+interface Application {
+    id?: string;
+    jobId: string;
+    status: string;
+    createdAt: string;
 }
 
 // POPUP FOR LISTS
@@ -77,6 +85,8 @@ export default function ProfileForm() {
     const [showEducationPopup, setShowEducationPopup] = useState(false);
     const [showExperienceForm, setShowExperienceForm] = useState(false);
     const [showEducationForm, setShowEducationForm] = useState(false);
+    const [applications, setApplications] = useState<Application[]>([]);
+    const [showApplicationsPopup, setShowApplicationsPopup] = useState(false);
 
     // Load user data when component mounts
     useEffect(() => {
@@ -166,6 +176,19 @@ export default function ProfileForm() {
 
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch educations');
+        }
+    };
+
+    const fetchApplications = async () => {
+        try {
+            const response = await apiClient('/application');
+            const rawData = response.data || response;
+            const applicationsArray = Array.isArray(rawData) ? rawData : [];
+            console.log('Processed applications:', applicationsArray);
+            setApplications(applicationsArray);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch applications. Please try again.');
+            console.error('Application fetch error:', err);
         }
     };
 
@@ -620,6 +643,19 @@ export default function ProfileForm() {
         </div>
     );
 
+    // Applications List
+    const ApplicationListItem = ({ application }: { application: Application }) => (
+        <div className="p-4 border rounded-lg bg-white mb-4 shadow-sm">
+            <div className="mb-2">
+                <h4 className="font-semibold text-lg text-red-600">{application.jobId}</h4>
+            </div>
+            <div className="flex gap-6 mb-2 text-sm text-gray-600">
+                <span>Status: <span className="font-medium">{application.status}</span></span>
+                <span>Applied: {new Date(application.createdAt).toLocaleDateString()}</span>
+            </div>
+        </div>
+    );
+
     // submiting update
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -773,6 +809,19 @@ export default function ProfileForm() {
                         <Button type="button" onClick={() => setShowEducationPopup(true)} className="bg-red-600 hover:bg-red-700 text-white" >
                             Manage Education ({educations.length})</Button>
                     </div>
+                    {/* Applications section - just a button */}
+                    <div className="mt-6 flex justify-between items-center">
+                        <h3 className="text-2xl font-semibold text-gray-800">Job Applications</h3>
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                fetchApplications();
+                                setShowApplicationsPopup(true);
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white">
+                            View Applications
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -826,6 +875,19 @@ export default function ProfileForm() {
                         </div>
                     </div>
                 )}
+            </Popup>
+
+            {/* Applications Popup */}
+            <Popup isOpen={showApplicationsPopup} onClose={() => setShowApplicationsPopup(false)} title="Job Applications">
+                <div className="space-y-4">
+                    {applications.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">No job applications found.</p>
+                    ) : (
+                        applications.map((application, index) => (
+                            <ApplicationListItem key={index} application={application} />
+                        ))
+                    )}
+                </div>
             </Popup>
         </form>
     );
