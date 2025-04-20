@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import LandingCore from "./components/LandingCore";
+import Recommendations from "./components/Recommendations";
 
 export default function Home() {
   return (
@@ -41,6 +42,8 @@ export default function Home() {
 
       {/* Main Content Section */}
       <LandingCore />
+      {/* Recommendations Section */}
+      <Recommendations />
     </main>
   );
 }
