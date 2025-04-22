@@ -14,7 +14,6 @@ export default function SignupForm() {
     phone: "",
     password: "",
     educationLevel: "undergrad",
-    experience: "",
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,22 +144,7 @@ export default function SignupForm() {
           </div>
         </div>
 
-        {/* Experience */}
-        <div className="space-y-2">
-          <label htmlFor="experience" className="block text-[#F5F5F5]">
-            Experience
-          </label>
-          <input
-            type="text"
-            id="experience"
-            name="experience"
-            placeholder="3 years in software development"
-            value={formData.experience}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 rounded bg-[#1E1E1E] border border-[#4B4B4B] text-[#F5F5F5] focus:outline-none focus:border-[#C00F0C]"
-          />
-        </div>
+      
       </div>
 
       {(error || authError) && (
