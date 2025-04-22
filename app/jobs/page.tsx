@@ -101,7 +101,7 @@ function JobSearchPageList() {
               />
             </svg>
 
-            <FilterSection onResults={handleJobResults} /> {/* Pass callback to FilterSection */}
+            
             <SearchBar onResults={handleJobResults} /> {/* Pass callback to SearchBar */}
             <button 
               onClick={navigateToSwipeMode}
@@ -111,7 +111,10 @@ function JobSearchPageList() {
             </button>
           </div>
         </section>
-        <section className="grid gap-6 px-20 py-5 grid-cols-[repeat(2,1fr)] max-md:p-5 max-md:grid-cols-[1fr]">
+        
+        <section className="grid gap-6 px-20 py-5 grid-cols-[auto_1fr] max-md:grid-cols-[1fr] max-md:p-5">
+        <FilterSection onResults={handleJobResults} /> {/* Pass callback to FilterSection */}
+        <div className="col-start-2 grid grid-cols-2 gap-6 max-md:grid-cols-1">
           {isLoading ? (
             <div className="text-white text-xl col-span-2">Loading jobs...</div>
           ) : error ? (
@@ -133,6 +136,7 @@ function JobSearchPageList() {
           ) : (
             <p className="text-white col-span-2">No jobs found.</p>
           )}
+          </div>
         </section>
       </main>
     </div>
