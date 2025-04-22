@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, useAnimation } from "framer-motion"
 import { Trash2, Star, ChevronDown } from "lucide-react"
 import type { Job } from "@/app/jobs/swipe/types/job"
+import { apiClient } from "@/lib/api-client"
 
 export function JobCard({
   jobs,
@@ -18,6 +19,8 @@ export function JobCard({
   const [showDetails, setShowDetails] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const controls = useAnimation()
+  const [atsData, setAtsData] = useState<{ ats: number; response: string } | null>(null)
+  const [isLoadingAts, setIsLoadingAts] = useState(false)
 
   // Function to handle card transition
   const handleCardTransition = (direction: "left" | "right") => {
@@ -45,6 +48,8 @@ export function JobCard({
         setSwipeDirection(null)
         setIsAnimating(false)
         setShowDetails(false)
+        // Reset ATS data for the next card
+        setAtsData(null)
 
         // Reset position for next card
         controls.set({
@@ -77,12 +82,30 @@ export function JobCard({
     }
   }
 
+  // Function to fetch ATS score
+  const fetchAtsScore = async (jobId: string) => {
+    // If we already have ATS data, don't fetch it again
+    if (atsData) {
+      return
+    }
+    
+    try {
+      setIsLoadingAts(true)
+      const data = await apiClient(`/jobs/ats/${jobId}`)
+      setAtsData(data)
+    } catch (error) {
+      console.error("Error fetching ATS data:", error)
+    } finally {
+      setIsLoadingAts(false)
+    }
+  }
+
   // Handle drag with enhanced tilt effect
   const handleDrag = (event: any, info: any) => {
     if (isAnimating) return
 
     const { offset } = info
-    
+
     // Increase rotation factor for more noticeable tilt
     const rotationFactor = 0.2 // Increased for more pronounced tilt
     const rotation = Math.min(Math.max(offset.x * rotationFactor, -20), 20) // Increased limit to ±20 degrees
@@ -214,13 +237,15 @@ export function JobCard({
           <div className="p-6 select-none">
             <h2 className="text-xl font-bold text-[#1a1a1a] select-none">{currentJob.title}</h2>
             <p className="text-gray-700 select-none">
-              {currentJob.company} - {currentJob.location || `${currentJob.city || ''}, ${currentJob.country || ''}`.replace(/(^, )|(, $)/g, '')}
+              {currentJob.company} -{" "}
+              {currentJob.location ||
+                `${currentJob.city || ""}, ${currentJob.country || ""}`.replace(/(^, )|(, $)/g, "")}
             </p>
             <p className="text-gray-700 select-none">
               {currentJob.industry} - {currentJob.role}
             </p>
 
-           <div className="mt-4 select-none">
+            <div className="mt-4 select-none">
               <p className="font-semibold underline select-none text-gray-800">Requirements:</p>
               <ul className="list-disc pl-5 mt-2 select-none">
                 {currentJob.requirements && currentJob.requirements.length > 0 ? (
@@ -233,36 +258,61 @@ export function JobCard({
                   <li className="text-gray-800 select-none">No specific requirements listed</li>
                 )}
                 {currentJob.requirements && currentJob.requirements.length > 3 && (
-                  <li className="text-gray-800 select-none">
-                    ...and {currentJob.requirements.length - 3} more
-                  </li>
+                  <li className="text-gray-800 select-none">...and {currentJob.requirements.length - 3} more</li>
                 )}
               </ul>
             </div>
 
             <div className="mt-6 flex items-center justify-between select-none">
               <div className="select-none">
-                <p className="font-semibold text-gray-800 select-none">Match Score</p>
-                <p className="text-5xl font-bold text-[#8B5A2B] select-none">{currentJob.matchScore || 75}%</p>
+                <p className="font-semibold text-gray-800 select-none">ATS Score</p>
+                <p className="text-5xl font-bold text-[#8B5A2B] select-none">{atsData ? `${atsData.ats}%` : "--"}</p>
               </div>
               <div className="max-w-[60%] select-none">
                 <p className="text-sm text-gray-700 select-none">
-                  This score indicates how well your profile matches this job's requirements.
+                  This score indicates how well your resume would perform in an Applicant Tracking System.
                 </p>
               </div>
             </div>
 
             <button
               className="mt-4 bg-[#333] text-white px-4 py-2 rounded-md flex items-center justify-center w-full select-none"
-              onClick={() => setShowDetails(!showDetails)}
+              onClick={() => {
+                if (!showDetails) {
+                  fetchAtsScore(currentJob.id)
+                }
+                // Toggle details without resetting ATS data
+                setShowDetails(!showDetails)
+              }}
             >
-              {showDetails ? "Hide Details" : "View More"} <ChevronDown className="ml-2 h-4 w-4" />
+              {showDetails ? "Hide ATS Result" : "Show ATS Result"} <ChevronDown className="ml-2 h-4 w-4" />
             </button>
 
             {showDetails && (
               <div className="mt-4 text-gray-800 select-none">
-                <p className="font-semibold select-none">Description:</p>
-                <p className="mt-1 select-none">{currentJob.description || "No detailed description available."}</p>
+                {isLoadingAts ? (
+                  <div className="mt-4">
+                    <p className="text-center">Loading ATS analysis...</p>
+                  </div>
+                ) : atsData ? (
+                  <div className="p-4 bg-white rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">ATS Score</h3>
+                      <span
+                        className="text-3xl font-bold"
+                        style={{ color: atsData.ats >= 70 ? "#4CAF50" : atsData.ats >= 50 ? "#FF9800" : "#F44336" }}
+                      >
+                        {atsData.ats}%
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold mb-1">CV Improvement Suggestions:</p>
+                      <p className="text-sm">{atsData.response}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center">Failed to load ATS analysis. Please try again.</p>
+                )}
               </div>
             )}
           </div>
