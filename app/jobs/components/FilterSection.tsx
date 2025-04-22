@@ -33,7 +33,9 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/v1/jobs/unique-filters");
+        const res = await fetch(
+          "http://localhost:3000/api/v1/jobs/unique-filters"
+        );
         if (!res.ok) {
           throw new Error("Failed to fetch filters");
         }
@@ -49,7 +51,10 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
   }, []);
 
   // Handle chip click (toggle selection)
-  const handleFilterClick = async (filterName: keyof typeof formData, value: string) => {
+  const handleFilterClick = async (
+    filterName: keyof typeof formData,
+    value: string
+  ) => {
     const updatedFilters = {
       ...formData,
       [filterName]: formData[filterName] === value ? "" : value, // Toggle the filter
@@ -78,89 +83,73 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
   };
 
   return (
-    <div>
+    <div className="flex flex-col w-64 space-y-6 p-4">
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Filters Container */}
-      <div className="flex gap-4">
+      <div className="flex flex-col space-y-6">
         {/* Industries (Dynamic) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Industries</h4>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+          <select
+            value={formData.industry}
+            onChange={(e) => handleFilterClick("industry", e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            <option value="">All Industries</option>
             {filters.industries.map((industry, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleFilterClick("industry", industry)}
-                className={`px-8 py-2 rounded-lg ${
-                  formData.industry === industry
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300 text-neutral-800"
-                }`}
-              >
+              <option key={idx} value={industry}>
                 {industry}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Roles (Static) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Roles</h4>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+          <select
+            value={formData.role}
+            onChange={(e) => handleFilterClick("role", e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            <option value="">All Roles</option>
             {staticFilters.roles.map((role, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleFilterClick("role", role)}
-                className={`px-8 py-2 rounded-lg ${
-                  formData.role === role
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300 text-neutral-800"
-                }`}
-              >
+              <option key={idx} value={role}>
                 {role}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Types (Static) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Types</h4>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+          <select
+            value={formData.type}
+            onChange={(e) => handleFilterClick("type", e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            <option value="">All Types</option>
             {staticFilters.types.map((type, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleFilterClick("type", type)}
-                className={`px-6 py-2 rounded-lg ${
-                  formData.type === type
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300 text-neutral-800"
-                }`}
-              >
+              <option key={idx} value={type}>
                 {type}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Cities (Dynamic) */}
         <div className="flex-1">
           <h4 className="text-lg font-semibold mb-2 text-white">Cities</h4>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-lg py-2" style={{ maxWidth: "300px" }}>
+          <select
+            value={formData.city}
+            onChange={(e) => handleFilterClick("city", e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            <option value="">All Cities</option>
             {filters.cities.map((city, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleFilterClick("city", city)}
-                className={`px-4 py-2 rounded-lg ${
-                  formData.city === city
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border border-gray-300 text-neutral-800"
-                }`}
-              >
+              <option key={idx} value={city}>
                 {city}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       </div>
     </div>
