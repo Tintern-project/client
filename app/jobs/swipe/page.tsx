@@ -114,11 +114,21 @@ export default function Home() {
       />
       <main className="w-full min-h-screen bg-[#1a1a1a]">
         <section className="px-14 pt-20">
-          <h1 className="mb-10 text-5xl font-medium tracking-normal leading-8 text-white max-sm:text-3xl max-sm:text-center">
-            SWIPE THROUGH JOBS
-          </h1>
+          <div className="flex justify-between items-center mb-10 max-sm:flex-col max-sm:items-start">
+            <h1 className="text-5xl font-medium tracking-normal leading-8 text-white max-sm:text-3xl max-sm:text-center max-sm:mb-5">
+              SWIPE THROUGH JOBS
+            </h1>
+            
+            <button
+              onClick={navigateToGridView}
+              className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid"
+            >
+              Grid Mode
+            </button>
+          </div>
           
-          <div className="flex gap-5 items-center max-md:flex-col max-md:items-start max-sm:px-2.5 max-sm:py-0 mb-10">
+          {/* Commented out filter section */}
+          {/* <div className="flex gap-5 items-center max-md:flex-col max-md:items-start max-sm:px-2.5 max-sm:py-0 mb-10">
             <svg
               width="48"
               height="48"
@@ -138,14 +148,7 @@ export default function Home() {
 
             <FilterSection onResults={handleJobResults} />
             <SearchBar onResults={handleJobResults} />
-            
-            <button
-              onClick={navigateToGridView}
-              className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid"
-            >
-              Grid Mode
-            </button>
-          </div>
+          </div> */}
         </section>
 
         <section className="flex justify-center items-center px-4 py-10">
