@@ -153,7 +153,7 @@ export default function Navbar() {
                   </span>
                 </Link>
                 <Link
-                  href="/ats-history"
+                  href="/jobs/ATS-score"
                   className="flex items-center px-4 py-2 hover:bg-[#4B4B4B] transition-colors duration-300 group">
                   {/* ATS History icon */}
                   <svg
