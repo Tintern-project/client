@@ -339,7 +339,7 @@ export default function Navbar() {
                       Saved Jobs
                     </Link>
                     <Link
-                      href="/ats-history"
+                      href="/jobs/ATS-score"
                       className="text-[#F5F5F5] py-2 px-3 rounded hover:bg-[#4B4B4B] block"
                       onClick={() => {
                         setMobileMenuOpen(false);
