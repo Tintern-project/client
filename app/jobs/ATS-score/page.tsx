@@ -25,14 +25,19 @@ interface ATSScore {
   _id: string
 }
 
+// Updated ScoreData to match new backend response
 interface ScoreData {
-  _id: string
-  userId: string
-  jobId: string
-  atsScore: ATSScore
-  resumeHash: string
-  scoredAt: string
-  __v: number
+  title: string
+  company: string
+  score: {
+    _id: string
+    userId: string
+    jobId: string
+    atsScore: ATSScore
+    resumeHash: string
+    scoredAt: string
+    __v: number
+  }
 }
 
 interface JobDetails {
@@ -93,29 +98,29 @@ export default function ATSScorePage() {
   const handleRecalculateATS = async (jobId: string, scoreId: string) => {
     try {
       setRecalculatingId(scoreId)
-
       // Call the API to recalculate the ATS score
       const response = await apiClient(`/jobs/ats/${jobId}`, {
         method: "GET",
       })
-
       // Update the score in the local state most of the time will remain the same unless user changes the CV
       setAtsScores((prevScores) =>
-        prevScores.map((score) =>
-          score._id === scoreId
+        prevScores.map((item) =>
+          item.score._id === scoreId
             ? {
-                ...score,
-                atsScore: {
-                  ...score.atsScore,
-                  ats: response.ats || score.atsScore.ats,
-                  response: response.response || score.atsScore.response,
+                ...item,
+                score: {
+                  ...item.score,
+                  atsScore: {
+                    ...item.score.atsScore,
+                    ats: response.ats || item.score.atsScore.ats,
+                    response: response.response || item.score.atsScore.response,
+                  },
+                  scoredAt: new Date().toISOString(),
                 },
-                scoredAt: new Date().toISOString(),
               }
-            : score,
+            : item,
         ),
       )
-
       // Show success notification (could be implemented with a toast)
       console.log("ATS score recalculated successfully")
     } catch (error) {
@@ -198,16 +203,16 @@ export default function ATSScorePage() {
               transition={{ duration: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {atsScores.map((score) => (
+              {atsScores.map((item) => (
                 <ScoreCard
-                  key={score._id}
-                  score={score}
-                  isExpanded={expandedId === score._id}
-                  toggleExpand={() => toggleExpand(score._id)}
-                  scoreColor={getScoreColor(score.atsScore.ats)}
-                  onRecalculate={() => handleRecalculateATS(score.jobId, score._id)}
-                  isRecalculating={recalculatingId === score._id}
-                  onViewJobDetails={() => openJobDetails(score.jobId)}
+                  key={item.score._id}
+                  scoreData={item}
+                  isExpanded={expandedId === item.score._id}
+                  toggleExpand={() => toggleExpand(item.score._id)}
+                  scoreColor={getScoreColor(item.score.atsScore.ats)}
+                  onRecalculate={() => handleRecalculateATS(item.score.jobId, item.score._id)}
+                  isRecalculating={recalculatingId === item.score._id}
+                  onViewJobDetails={() => openJobDetails(item.score.jobId)}
                 />
               ))}
             </motion.div>
@@ -302,7 +307,7 @@ export default function ATSScorePage() {
 
 // Score Card Component
 function ScoreCard({
-  score,
+  scoreData,
   isExpanded,
   toggleExpand,
   scoreColor,
@@ -310,7 +315,7 @@ function ScoreCard({
   isRecalculating,
   onViewJobDetails,
 }: {
-  score: ScoreData
+  scoreData: ScoreData
   isExpanded: boolean
   toggleExpand: () => void
   scoreColor: string
@@ -319,22 +324,19 @@ function ScoreCard({
   onViewJobDetails: () => void
 }) {
   const [isHovered, setIsHovered] = useState(false)
-
+  const { score, title, company } = scoreData
   // Format date
   const formattedDate = new Date(score.scoredAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
-
   // Extract keywords from response
   const extractKeywords = (response: string) => {
     const keywords = response.match(/\b(skills|experience|projects|frameworks|tools|metrics|highlight)\b/gi)
     return keywords ? [...new Set(keywords)].slice(0, 3) : []
   }
-
   const keywords = extractKeywords(score.atsScore.response)
-
   return (
     <motion.div
       layout
@@ -352,19 +354,16 @@ function ScoreCard({
         animate={{ opacity: isHovered ? 0.15 : 0 }}
         transition={{ duration: 0.3 }}
       />
-
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-bold truncate max-w-[200px]">
-              Job ID: {score.jobId.substring(score.jobId.length - 8)}
-            </h3>
+            <h3 className="text-xl font-bold truncate max-w-[200px]">{title}</h3>
+            <p className="text-gray-400 text-sm truncate max-w-[200px]">{company}</p>
             <div className="flex items-center text-gray-400 text-sm mt-1">
               <Calendar size={14} className="mr-1" />
               <span>{formattedDate}</span>
             </div>
           </div>
-
           <motion.div
             className={`flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br ${scoreColor} shadow-lg`}
             whileHover={{ scale: 1.05 }}
@@ -373,7 +372,6 @@ function ScoreCard({
             <span className="text-xl font-bold">{score.atsScore.ats}%</span>
           </motion.div>
         </div>
-
         {/* Keywords */}
         {keywords.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
@@ -384,7 +382,6 @@ function ScoreCard({
             ))}
           </div>
         )}
-
         {/* Expandable content */}
         <motion.div
           animate={{ height: isExpanded ? "auto" : "0px" }}
@@ -396,7 +393,6 @@ function ScoreCard({
               <Lightbulb size={18} className="text-yellow-500 mt-1 flex-shrink-0" />
               <p className="text-gray-300 text-sm">{score.atsScore.response}</p>
             </div>
-
             <div className="flex flex-wrap gap-3 mt-4">
               <button
                 onClick={onViewJobDetails}
@@ -405,7 +401,6 @@ function ScoreCard({
                 <Briefcase size={14} />
                 <span>View Job</span>
               </button>
-
               <button
                 onClick={onRecalculate}
                 disabled={isRecalculating}
@@ -421,7 +416,6 @@ function ScoreCard({
             </div>
           </div>
         </motion.div>
-
         {/* Expand/collapse button */}
         <button
           onClick={toggleExpand}
@@ -453,25 +447,22 @@ function ScoreTimeline({
   onViewJobDetails: (jobId: string) => void
 }) {
   // Sort scores by date (newest first)
-  const sortedScores = [...scores].sort((a, b) => new Date(b.scoredAt).getTime() - new Date(a.scoredAt).getTime())
-
+  const sortedScores = [...scores].sort((a, b) => new Date(b.score.scoredAt).getTime() - new Date(a.score.scoredAt).getTime())
   return (
     <div className="relative">
       {/* Timeline line */}
       <div className="absolute left-[22px] top-8 bottom-0 w-1 bg-gradient-to-b from-[#BA1B1B] to-[#2A2A2A] rounded-full" />
-
       <div className="space-y-8">
-        {sortedScores.map((score, index) => {
+        {sortedScores.map((item, index) => {
+          const { score, title, company } = item
           const formattedDate = new Date(score.scoredAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
           })
-
           const isExpanded = expandedId === score._id
           const scoreColor = getScoreColor(score.atsScore.ats)
           const isRecalculating = recalculatingId === score._id
-
           return (
             <motion.div
               key={score._id}
@@ -488,19 +479,18 @@ function ScoreTimeline({
               >
                 <span className="text-base font-bold">{score.atsScore.ats}%</span>
               </motion.div>
-
               <div className="bg-[#1E1E1E] rounded-xl overflow-hidden shadow-lg">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold">Job ID: {score.jobId.substring(score.jobId.length - 8)}</h3>
+                      <h3 className="text-xl font-bold truncate max-w-[200px]">{title}</h3>
+                      <p className="text-gray-400 text-sm truncate max-w-[200px]">{company}</p>
                       <div className="flex items-center text-gray-400 text-sm mt-1">
                         <Calendar size={14} className="mr-1" />
                         <span>{formattedDate}</span>
                       </div>
                     </div>
                   </div>
-
                   {/* Expandable content */}
                   <motion.div
                     animate={{ height: isExpanded ? "auto" : "0px" }}
@@ -512,7 +502,6 @@ function ScoreTimeline({
                         <Lightbulb size={18} className="text-yellow-500 mt-1 flex-shrink-0" />
                         <p className="text-gray-300 text-sm">{score.atsScore.response}</p>
                       </div>
-
                       <div className="flex flex-wrap gap-3 mt-4">
                         <button
                           onClick={() => onViewJobDetails(score.jobId)}
@@ -521,7 +510,6 @@ function ScoreTimeline({
                           <Briefcase size={14} />
                           <span>View Job</span>
                         </button>
-
                         <button
                           onClick={() => onRecalculate(score.jobId, score._id)}
                           disabled={isRecalculating}
@@ -537,7 +525,6 @@ function ScoreTimeline({
                       </div>
                     </div>
                   </motion.div>
-
                   {/* Expand/collapse button */}
                   <button
                     onClick={() => toggleExpand(score._id)}
