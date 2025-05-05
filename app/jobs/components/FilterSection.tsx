@@ -83,7 +83,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
   };
 
   return (
-<div className="flex flex-col w-45 max-sm:w-0 space-y-6 p-4">
+    <div className="flex flex-col w-full sm:w-45 space-y-6 p-4">
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {/* Filters Container */}
       <div className="flex flex-col space-y-6">
