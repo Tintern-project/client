@@ -113,15 +113,15 @@ export default function Home() {
         rel="stylesheet"
       />
       <main className="w-full min-h-screen bg-[#1a1a1a]">
-        <section className="px-14 pt-20">
-          <div className="flex justify-between items-center mb-10 max-sm:flex-col max-sm:items-start">
-            <h1 className="text-5xl font-medium tracking-normal leading-8 text-white max-sm:text-3xl max-sm:text-center max-sm:mb-5">
+        <section className="px-4 sm:px-8 md:px-14 pt-10 sm:pt-16 md:pt-20">
+          <div className="flex justify-between items-center mb-6 sm:mb-10 flex-col sm:flex-row">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-normal leading-8 text-white text-center sm:text-left mb-4 sm:mb-0 w-full sm:w-auto">
               SWIPE THROUGH JOBS
             </h1>
             
             <button
               onClick={navigateToGridView}
-              className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid"
+              className="p-3 text-base text-rose-100 bg-orange-800 rounded-lg border border-solid w-full sm:w-auto"
             >
               Grid Mode
             </button>
@@ -151,14 +151,14 @@ export default function Home() {
           </div> */}
         </section>
 
-        <section className="flex justify-center items-center px-4 py-10">
+        <section className="flex justify-center items-center px-4 py-6 sm:py-8 md:py-10">
           <div className="w-full max-w-xl mx-auto">
             {isLoading ? (
               <div className="text-white text-xl text-center">Loading jobs...</div>
             ) : error ? (
               <div className="text-red-500 text-xl text-center">Error: {error}</div>
             ) : jobListings.length > 0 ? (
-              <div className="relative h-[500px] w-full">
+              <div className="relative h-[350px] sm:h-[400px] md:h-[450px] lg:h-[500px] w-full">
                 <JobCard jobs={jobListings} onAddToFavorites={handleAddToFavorites} />
               </div>
             ) : (
