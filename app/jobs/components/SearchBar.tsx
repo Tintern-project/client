@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useToast } from "../../context/ToastContext";
 
 interface SearchBarProps {
-  onResults: (jobs: any[]) => void; // Callback to pass job results to parent
+  onResults: (jobs: any[]) => void; // Callback to pass search results to the parent
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
+  const { showToast } = useToast();
   const [keyword, setKeyword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +31,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
 
       const data = await res.json();
       onResults(data); // Pass results to parent
+      showToast("Search results loaded!", "success");
     } catch (error: any) {
-      setError(error.message);
+      const errorMessage = error.message || "Failed to fetch jobs";
+      setError(errorMessage);
+      showToast(errorMessage, "error");
       console.error("Error fetching jobs:", error);
     } finally {
       setIsLoading(false);

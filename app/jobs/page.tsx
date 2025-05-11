@@ -5,6 +5,7 @@ import FilterSection from "@/app/jobs/components/FilterSection";
 import JobCard from "@/app/jobs/components/JobCard";
 import { apiClient } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
+import { useToast } from "../context/ToastContext";
 
 function JobSearchPageList() {
   interface job {
@@ -18,6 +19,7 @@ function JobSearchPageList() {
   }
 
   const router = useRouter();
+  const { showToast } = useToast();
   const [jobListings, setJobListings] = React.useState<job[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -36,7 +38,9 @@ function JobSearchPageList() {
         }));
         setJobListings(formattedJobs);
       } catch (error: any) {
-        setError(error.message || "Failed to fetch jobs");
+        const errorMessage = error.message || "Failed to fetch jobs";
+        setError(errorMessage);
+        showToast(errorMessage, "error");
       } finally {
         setIsLoading(false);
       }
@@ -58,10 +62,13 @@ function JobSearchPageList() {
       await apiClient(`/jobs/save/${jobId}`, {
         method: "POST",
       });
-      alert("Job saved to favorites!");
-    } catch (error) {
+      showToast("Job saved to favorites!", "success");
+    } catch (error: any) {
       console.error("Error saving job:", error);
-      alert("Failed to save job. Please try again.");
+      showToast(
+        error.message || "Failed to save job. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -131,10 +138,14 @@ function JobSearchPageList() {
 
           {/* Job listings */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {isLoading ? (
-              <div className="text-white text-xl col-span-2">Loading jobs...</div>
+            {isLoading ? (
+              <div className="text-white text-xl col-span-2">
+                Loading jobs...
+              </div>
             ) : error ? (
-              <div className="text-red-500 text-xl col-span-2">Error: {error}</div>
+              <div className="text-red-500 text-xl col-span-2">
+                Error: {error}
+              </div>
             ) : jobListings && jobListings.length > 0 ? (
               jobListings.map((job) => (
                 <JobCard
