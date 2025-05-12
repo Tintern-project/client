@@ -213,7 +213,11 @@ export default function JobDetail() {
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 mr-2 text-gray-600" />
                   <span>Posted 2 days ago</span>
-                </div>
+                  </div>
+                  <div className="flex items-center mb-2">
+                  <ClockIcon className="h-4 w-4 mr-2 text-gray-600" />
+                  <span>Deadline: {new Date(job.applicationDeadline).toISOString().split('T')[0]}</span>
+                  </div>
               </div>
               <div>
                 <h2 className="font-bold mb-2 text-lg">Industry</h2>

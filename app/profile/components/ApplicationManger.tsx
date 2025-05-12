@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/app/profile/components/ui/button";
 import { apiClient } from "@/lib/api-client"; // Import the apiClient
 import Popup from "./ui/popup";
 
 export interface Application {
-  id?: string;
+  _id: string;
   jobId: string;
-  status: string;
+  status: "submitted" | "under review" | "accepted" | "rejected";
   createdAt: string;
   jobTitle?: string;
   company?: string;
@@ -29,7 +28,89 @@ const ApplicationsManager = ({
 }: ApplicationsManagerProps) => {
   const [showApplicationsPopup, setShowApplicationsPopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [updatingAppIds, setUpdatingAppIds] = useState<string[]>([]);
+
+    const isApplicationUpdating = (applicationId: string) => {
+        return updatingAppIds.includes(applicationId);
+    };
+
+    const handleStatusUpdate = async (applicationId: string, newStatus: string) => {
+        const originalApplications = [...applications];
+        const applicationToUpdate = applications.find(app => app._id === applicationId);
+
+        if (!applicationToUpdate) {
+            setError("Application not found");
+            return;
+        }
+
+        try {
+            setUpdatingAppIds(prev => [...prev, applicationId]);
+
+            const updatedApplications = applications.map(app => {
+                if (app._id === applicationId) {
+                    return {
+                        ...app,
+                        status: newStatus as Application['status']
+                    };
+                }
+                return app;
+            });
+
+            setApplications(updatedApplications);
+
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `http://localhost:3000/api/v1/application/${applicationToUpdate.jobId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        status: newStatus,
+                        applicationId: applicationId // Send the application ID in the request body
+                    }),
+                }
+            );
+
+            // Handle unauthorized responses
+            if (response.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                if (typeof window !== "undefined") {
+                    window.location.href = "/auth/login";
+                }
+                return;
+            }
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || "Failed to update status");
+            }
+
+            console.log(`Successfully updated application ${applicationId} status to ${newStatus}`);
+
+        } catch (err) {
+            console.error("Error updating application status:", err);
+            setApplications(originalApplications);
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to update status. Please try again."
+            );
+        } finally {
+            // Remove this application from the updating list
+            setUpdatingAppIds(prev => prev.filter(id => id !== applicationId));
+        }
+    };
+
+    const handleChange = (applicationId: string, event: React.ChangeEvent<HTMLSelectElement>) => {
+        const newStatus = event.target.value;
+        handleStatusUpdate(applicationId, newStatus);
+    };
 
   const fetchApplications = async () => {
     try {
@@ -94,15 +175,31 @@ const ApplicationsManager = ({
             {application.company}
           </p>
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-semibold inline-block sm:flex-shrink-0 sm:ml-2 ${
-            application.status.toLowerCase() === "pending"
-              ? "bg-red-100 text-red-700"
-              : "bg-gray-100 text-gray-700"
-          }`}
+        <select
+            value={application.status}
+            onChange={(e) => {
+                console.log("Select changed for application:", {
+                    id: application._id,
+                    jobId: application.jobId,
+                    status: e.target.value
+                });
+                handleChange(application._id, e);
+            }}
+                  disabled={isApplicationUpdating(application._id)}
+            className={`px-3 py-1 rounded-full text-sm font-semibold inline-block sm:flex-shrink-0 sm:ml-2 ${application.status === "submitted"
+                    ? "bg-red-100 text-red-700"
+                    : application.status === "accepted"
+                        ? "bg-green-100 text-green-700"
+                        : application.status === "rejected"
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-yellow-100 text-yellow-700"
+                } ${isApplicationUpdating(application._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {application.status}
-        </span>
+            <option value="submitted">Submitted</option>
+            <option value="under review">Under Review</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+        </select>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-2">
@@ -167,10 +264,10 @@ const ApplicationsManager = ({
               </p>
             </div>
           ) : (
-            applications.map((application, index) => (
-              <div key={index} className="group transition-all duration-150">
-                <ApplicationListItem application={application} />
-              </div>
+            applications.map((application) => (
+                <div key={application._id} className="group transition-all duration-150">
+                    <ApplicationListItem application={application} />
+                </div>
             ))
           )}
         </div>
