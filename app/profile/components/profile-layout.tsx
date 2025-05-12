@@ -3,9 +3,9 @@ import ProfileForm from "@/app/profile/components/profile-form";
 
 export default function ProfileLayout() {
   return (
-    <div className="flex items-center justify-center min-h-[80vh]">
+    <div className="flex items-center justify-center min-h-[80vh] py-6">
       <div className="grid md:grid-cols-2 overflow-hidden rounded-xl max-w-7xl w-full mx-auto bg-[#222] shadow-xl">
-        <div className="h-full">
+        <div className="h-full hidden md:block">
           <Image
             src="/hero.jpg"
             alt="Profile background"
@@ -15,7 +15,7 @@ export default function ProfileLayout() {
             priority
           />
         </div>
-        <div className="bg-[#f0f0f0] text-black p-10 lg:p-14">
+        <div className="bg-[#f0f0f0] text-black p-5 sm:p-8 md:p-10 lg:p-14">
           <ProfileForm />
         </div>
       </div>
