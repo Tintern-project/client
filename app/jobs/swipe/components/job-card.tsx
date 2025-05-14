@@ -179,40 +179,50 @@ export function JobCard({
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">
-      {/* Action buttons - moved further away */}
+      {/* Action buttons - responsive positioning - hidden on extra small screens */}
       <button
         onClick={() => !isAnimating && handleCardTransition("left")}
-        className="absolute left-[-60px] z-30 bg-red-500 rounded-full p-4 shadow-lg hover:bg-red-600 transition-colors"
+        className="absolute hidden sm:flex left-[-30px] sm:left-[-40px] md:left-[-60px] z-30 bg-red-500 rounded-full p-3 sm:p-4 shadow-lg hover:bg-red-600 transition-colors items-center justify-center"
         disabled={isAnimating}
         aria-label="Reject"
       >
-        <Trash2 className="h-6 w-6 text-white" />
+        <Trash2 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
       </button>
 
       <button
         onClick={() => !isAnimating && handleCardTransition("right")}
-        className="absolute right-[-60px] z-30 bg-white rounded-full p-4 shadow-lg hover:bg-gray-100 transition-colors"
+        className="absolute hidden sm:flex right-[-30px] sm:right-[-40px] md:right-[-60px] z-30 bg-white rounded-full p-3 sm:p-4 shadow-lg hover:bg-gray-100 transition-colors items-center justify-center"
         disabled={isAnimating}
         aria-label="Save"
       >
-        <Star className="h-6 w-6 text-[#1a1a1a]" />
+        <Star className="h-5 w-5 sm:h-6 sm:w-6 text-[#1a1a1a]" />
       </button>
 
-      {/* Visual indicators for swipe direction */}
+      {/* Visual indicators for swipe direction - enhanced for small screens */}
       {swipeDirection === "left" && (
-        <div className="absolute left-[-60px] top-1/2 transform -translate-y-1/2 z-20 transition-opacity">
-          <div className="animate-pulse bg-red-500 rounded-full p-6 shadow-lg">
-            <Trash2 className="h-8 w-8 text-white" />
+        <>
+          {/* Indicator for larger screens */}
+          <div className="absolute hidden sm:block left-[-30px] sm:left-[-40px] md:left-[-60px] top-1/2 transform -translate-y-1/2 z-20 transition-opacity">
+            <div className="animate-pulse bg-red-500 rounded-full p-4 sm:p-5 md:p-6 shadow-lg">
+              <Trash2 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
+            </div>
           </div>
-        </div>
+          {/* Red glow effect for all screen sizes */}
+          <div className="absolute inset-0 rounded-3xl shadow-[0_0_15px_rgba(239,68,68,0.7)] animate-pulse z-10"></div>
+        </>
       )}
 
       {swipeDirection === "right" && (
-        <div className="absolute right-[-60px] top-1/2 transform -translate-y-1/2 z-20 transition-opacity">
-          <div className="animate-pulse bg-white rounded-full p-6 shadow-lg">
-            <Star className="h-8 w-8 text-[#1a1a1a]" />
+        <>
+          {/* Indicator for larger screens */}
+          <div className="absolute hidden sm:block right-[-30px] sm:right-[-40px] md:right-[-60px] top-1/2 transform -translate-y-1/2 z-20 transition-opacity">
+            <div className="animate-pulse bg-white rounded-full p-4 sm:p-5 md:p-6 shadow-lg">
+              <Star className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-[#1a1a1a]" />
+            </div>
           </div>
-        </div>
+          {/* Green glow effect for all screen sizes */}
+          <div className="absolute inset-0 rounded-3xl shadow-[0_0_15px_rgba(34,197,94,0.7)] animate-pulse z-10"></div>
+        </>
       )}
 
       {/* Current card */}
@@ -225,29 +235,29 @@ export function JobCard({
         onDragEnd={handleDragEnd}
         animate={controls}
         initial={{ x: 0, rotate: 0 }}
-        className="absolute w-[80%] select-none cursor-grab active:cursor-grabbing"
+        className="absolute w-[90%] sm:w-[85%] md:w-[80%] select-none cursor-grab active:cursor-grabbing"
         style={{ touchAction: "none" }}
       >
         <div
           className={`bg-[#e6e6e6] rounded-3xl shadow-xl overflow-hidden mx-auto
-            ${swipeDirection === "left" ? "border-l-4 border-red-500" : ""}
-            ${swipeDirection === "right" ? "border-r-4 border-green-500" : ""}
+            ${swipeDirection === "left" ? "border-l-4 border-red-500 sm:border-l-0" : ""}
+            ${swipeDirection === "right" ? "border-r-4 border-green-500 sm:border-r-0" : ""}
           `}
         >
-          <div className="p-6 select-none">
-            <h2 className="text-xl font-bold text-[#1a1a1a] select-none">{currentJob.title}</h2>
-            <p className="text-gray-700 select-none">
+          <div className="p-4 sm:p-5 md:p-6 select-none">
+            <h2 className="text-lg sm:text-xl font-bold text-[#1a1a1a] select-none">{currentJob.title}</h2>
+            <p className="text-sm sm:text-base text-gray-700 select-none">
               {currentJob.company} -{" "}
               {currentJob.location ||
                 `${currentJob.city || ""}, ${currentJob.country || ""}`.replace(/(^, )|(, $)/g, "")}
             </p>
-            <p className="text-gray-700 select-none">
+            <p className="text-sm sm:text-base text-gray-700 select-none">
               {currentJob.industry} - {currentJob.role}
             </p>
 
-            <div className="mt-4 select-none">
-              <p className="font-semibold underline select-none text-gray-800">Requirements:</p>
-              <ul className="list-disc pl-5 mt-2 select-none">
+            <div className="mt-3 sm:mt-4 select-none">
+              <p className="font-semibold underline select-none text-gray-800 text-sm sm:text-base">Requirements:</p>
+              <ul className="list-disc pl-4 sm:pl-5 mt-1 sm:mt-2 select-none text-sm sm:text-base">
                 {currentJob.requirements && currentJob.requirements.length > 0 ? (
                   currentJob.requirements.slice(0, 3).map((req, index) => (
                     <li key={index} className="text-gray-800 select-none">
@@ -263,20 +273,20 @@ export function JobCard({
               </ul>
             </div>
 
-            <div className="mt-6 flex items-center justify-between select-none">
+            <div className="mt-4 sm:mt-6 flex items-center justify-between select-none">
               <div className="select-none">
-                <p className="font-semibold text-gray-800 select-none">ATS Score</p>
-                <p className="text-5xl font-bold text-[#8B5A2B] select-none">{atsData ? `${atsData.ats}%` : "--"}</p>
+                <p className="font-semibold text-gray-800 select-none text-sm sm:text-base">ATS Score</p>
+                <p className="text-4xl sm:text-5xl font-bold text-[#8B5A2B] select-none">{atsData ? `${atsData.ats}%` : "--"}</p>
               </div>
               <div className="max-w-[60%] select-none">
-                <p className="text-sm text-gray-700 select-none">
+                <p className="text-xs sm:text-sm text-gray-700 select-none">
                   This score indicates how well your resume would perform in an Applicant Tracking System.
                 </p>
               </div>
             </div>
 
             <button
-              className="mt-4 bg-[#333] text-white px-4 py-2 rounded-md flex items-center justify-center w-full select-none"
+              className="mt-3 sm:mt-4 bg-[#333] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md flex items-center justify-center w-full select-none text-sm sm:text-base"
               onClick={() => {
                 if (!showDetails) {
                   fetchAtsScore(currentJob.id)
@@ -285,33 +295,33 @@ export function JobCard({
                 setShowDetails(!showDetails)
               }}
             >
-              {showDetails ? "Hide ATS Result" : "Show ATS Result"} <ChevronDown className="ml-2 h-4 w-4" />
+              {showDetails ? "Hide ATS Result" : "Show ATS Result"} <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
             </button>
 
             {showDetails && (
-              <div className="mt-4 text-gray-800 select-none">
+              <div className="mt-3 sm:mt-4 text-gray-800 select-none">
                 {isLoadingAts ? (
-                  <div className="mt-4">
-                    <p className="text-center">Loading ATS analysis...</p>
+                  <div className="mt-2 sm:mt-4">
+                    <p className="text-center text-sm sm:text-base">Loading ATS analysis...</p>
                   </div>
                 ) : atsData ? (
-                  <div className="p-4 bg-white rounded-lg border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-lg">ATS Score</h3>
+                  <div className="p-3 sm:p-4 bg-white rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <h3 className="font-bold text-base sm:text-lg">ATS Score</h3>
                       <span
-                        className="text-3xl font-bold"
+                        className="text-2xl sm:text-3xl font-bold"
                         style={{ color: atsData.ats >= 70 ? "#4CAF50" : atsData.ats >= 50 ? "#FF9800" : "#F44336" }}
                       >
                         {atsData.ats}%
                       </span>
                     </div>
                     <div>
-                      <p className="font-semibold mb-1">CV Improvement Suggestions:</p>
-                      <p className="text-sm">{atsData.response}</p>
+                      <p className="font-semibold mb-1 text-sm sm:text-base">CV Improvement Suggestions:</p>
+                      <p className="text-xs sm:text-sm">{atsData.response}</p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-center">Failed to load ATS analysis. Please try again.</p>
+                  <p className="text-center text-sm sm:text-base">Failed to load ATS analysis. Please try again.</p>
                 )}
               </div>
             )}
@@ -320,8 +330,8 @@ export function JobCard({
       </motion.div>
 
       {/* Swipe instructions */}
-      <div className="absolute bottom-[-60px] text-white text-center w-full opacity-70 select-none">
-        <p>Swipe left to reject, right to save</p>
+      <div className="absolute bottom-[-40px] sm:bottom-[-50px] md:bottom-[-60px] text-white text-center w-full opacity-70 select-none">
+        <p className="text-sm sm:text-base">Swipe left to reject, right to save</p>
       </div>
     </div>
   )

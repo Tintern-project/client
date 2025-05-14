@@ -50,8 +50,7 @@ const JobCard: React.FC<JobCardProps> = ({
 
     return (
         <article
-            className="flex justify-between p-6 rounded-3xl transition-all cursor-pointer bg-zinc-300 hover:bg-zinc-200 duration-300 ease-in-out shadow-md hover:shadow-lg h-auto border-l-4 border-orange-800"
-            onClick={navigateToJobDetail}
+        className="flex flex-col sm:flex-row justify-between p-6 rounded-3xl transition-all cursor-pointer bg-zinc-300 hover:bg-zinc-200 duration-300 ease-in-out shadow-md hover:shadow-lg h-auto border-l-4 border-orange-800 w-full"            onClick={navigateToJobDetail}
         >
             <div className="flex flex-col gap-3 flex-1">
                 <div className="flex flex-col">
@@ -74,15 +73,14 @@ const JobCard: React.FC<JobCardProps> = ({
                 </div>
             </div>
 
-            <div className="flex flex-col gap-3 justify-center ml-4">
-                <button
-                    className="px-4 py-3 text-sm font-medium rounded-lg transition-all cursor-pointer bg-neutral-800 hover:bg-neutral-900 border-none duration-300 ease-in-out text-neutral-100 w-32"
+            <div className="flex flex-col sm:items-end sm:justify-center gap-3 mt-4 sm:mt-0 w-full sm:w-auto">                <button
+                    className="px-4 py-3 text-sm font-medium rounded-lg transition-all bg-orange-800 hover:bg-orange-900 text-neutral-100 w-full sm:w-32"
                     onClick={handleSaveClick}
                 >
                     Star
                 </button>
                 <button
-                    className="px-4 py-3 text-sm font-medium rounded-lg transition-all cursor-pointer bg-orange-800 hover:bg-orange-900 border-none duration-300 ease-in-out text-neutral-100 w-32"
+                    className="px-4 py-3 text-sm font-medium rounded-lg transition-all bg-neutral-800 hover:bg-neutral-900 text-neutral-100 w-full sm:w-32"
                     onClick={handleApplyClick}
                 >
                     Details

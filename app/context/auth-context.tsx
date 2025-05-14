@@ -2,33 +2,34 @@
 
 import {
   createContext,
-  useState,
   useContext,
+  useState,
   useEffect,
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { useToast } from "./ToastContext";
 import { apiClient } from "@/lib/api-client";
 
-type User = {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    profile_picture_url?: string;
-    hasCV?: boolean;
-};
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  profile_picture_url?: string;
+  hasCV?: boolean;
+}
 
 interface AuthContextType {
-    user: User | null;
-    isLoading: boolean;
-    error: string | null;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (userData: any) => Promise<void>;
-    logout: () => Promise<void>;
-    updateProfile: (userId: string, userData: any) => Promise<void>;
-    refreshUserProfile: () => Promise<void>;
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (userData: any) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (userId: string, userData: any) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { showToast } = useToast();
 
-  // This useEffect loads the user from the cookie on initial mount
   useEffect(() => {
     const loadUserFromCookie = () => {
       // Set loading state while checking auth
@@ -106,11 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       setUser(userData);
+      showToast("Login successful!", "success");
 
       // Redirect to home
       router.push("/");
     } catch (error: any) {
-      setError(error.message);
+      const errorMessage = error.message || "Login failed";
+      setError(errorMessage);
+      showToast(errorMessage, "error");
       console.error("Login failed:", error);
     } finally {
       setIsLoading(false);
@@ -134,11 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Registration failed");
       }
-
+      showToast("Registration successful! Please login.", "success");
       // Redirect to login page after successful registration
       router.push("/auth/login");
     } catch (error: any) {
-      setError(error.message || "Registration failed");
+      const errorMessage = error.message || "Registration failed";
+      setError(errorMessage);
+      showToast(errorMessage, "error");
       console.error("Registration failed:", error);
     } finally {
       setIsLoading(false);
@@ -159,10 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Remove cookies
       Cookies.remove("user");
       Cookies.remove("token");
+      showToast("Logout successful!", "success");
 
       // Navigate to home page
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = "Logout failed. Please try again.";
+      // setError(errorMessage); // Optional: if you have a global error display for logout
+      showToast(errorMessage, "error");
       console.error("Logout error:", error);
     } finally {
       setIsLoading(false);
@@ -175,8 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Use apiClient instead of fetch for consistent error handling
-      const updatedUserData = await apiClient('/users/my-profile', {
-        method: 'PUT',
+      const updatedUserData = await apiClient("/users/my-profile", {
+        method: "PUT",
         data: userData,
       });
 
@@ -194,45 +204,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         path: "/",
         sameSite: "strict",
       });
+      showToast("Profile updated successfully!", "success");
     } catch (error: any) {
-      setError(error.message || "Failed to update profile");
+      const errorMessage = error.message || "Failed to update profile";
+      setError(errorMessage);
+      showToast(errorMessage, "error");
       console.error("Profile update failed:", error);
     } finally {
       setIsLoading(false);
     }
-    };
+  };
 
-    const refreshUserProfile = async () => {
-        if (!user?.id) return;
+  const refreshUserProfile = async () => {
+    if (!user?.id) return;
 
-        setIsLoading(true);
-        try {
-            const profileData = await apiClient('/users/my-profile', {
-                method: 'GET',
-            });
+    setIsLoading(true);
+    try {
+      const profileData = await apiClient("/users/my-profile", {
+        method: "GET",
+      });
 
-            // Update the user state with fresh data including hasCV status
-            const refreshedUserData = {
-                ...user,
-                ...profileData,
-            };
+      // Update the user state with fresh data including hasCV status
+      const refreshedUserData = {
+        ...user,
+        ...profileData,
+      };
 
-            setUser(refreshedUserData);
-            Cookies.set("user", JSON.stringify(refreshedUserData), {
-                expires: 7,
-                path: "/",
-                sameSite: "strict",
-            });
-        } catch (error) {
-            console.error("Failed to refresh user profile:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      setUser(refreshedUserData);
+      Cookies.set("user", JSON.stringify(refreshedUserData), {
+        expires: 7,
+        path: "/",
+        sameSite: "strict",
+      });
+      // Removed success toast as per "user action only" guideline
+    } catch (error: any) {
+      // Not adding error toast as per "user action only" guideline for refresh
+      console.error("Failed to refresh user profile:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const value = {
     user,
-    isLoading,
+    isLoading, // Ensured isLoading is used
     error,
     login,
     signup,

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useToast } from "../../context/ToastContext";
 
 interface FilterSectionProps {
   onResults: (jobs: any[]) => void; // Callback to pass filtered job results to the parent
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
+  const { showToast } = useToast();
   // Static filters
   const staticFilters = {
     roles: ["Full-time", "Part-time", "Intern", "Volunteer"],
@@ -77,13 +79,16 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
 
       const data = await res.json();
       onResults(data); // Pass results to parent
+      showToast("Jobs filtered successfully!", "success");
     } catch (error: any) {
+      const errorMessage = error.message || "Failed to filter jobs";
+      showToast(errorMessage, "error");
       console.error("Error fetching jobs:", error.message);
     }
   };
 
   return (
-<div className="flex flex-col w-45 max-sm:w-0 space-y-6 p-4">
+    <div className="flex flex-col w-full sm:w-45 space-y-6 p-4">
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {/* Filters Container */}
       <div className="flex flex-col space-y-6">

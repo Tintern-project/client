@@ -4,18 +4,35 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Dialog } from "@headlessui/react";
-import { BookmarkIcon, BriefcaseIcon, MapPinIcon, CalendarIcon, ClockIcon } from "lucide-react";
+import {
+  BookmarkIcon,
+  BriefcaseIcon,
+  MapPinIcon,
+  CalendarIcon,
+  ClockIcon,
+} from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { DidYouApplyModal } from "../jobs/components/DidYouApplyModal";
+import { useToast } from "../context/ToastContext";
 
 export default function Recommendations() {
-  const [jobListings, setJobListings] = React.useState<any[]>([]);
+  const [jobListings, setJobListings] = React.useState<Record<string, any>[]>(
+    []
+  );
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedJob, setSelectedJob] = React.useState<any | null>(null);
+  const [selectedJob, setSelectedJob] = React.useState<Record<
+    string,
+    any
+  > | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [modalLoading, setModalLoading] = React.useState(false);
   const [modalError, setModalError] = React.useState<string | null>(null);
   const [savedJobs, setSavedJobs] = React.useState<Set<string>>(new Set());
+  const [showApplyModal, setShowApplyModal] = React.useState(false);
+  const [currentJobId, setCurrentJobId] = React.useState<string | null>(null);
+  const [isApplying, setIsApplying] = React.useState(false);
+  const { showToast } = useToast();
 
   React.useEffect(() => {
     const fetchAllJobs = async () => {
@@ -28,6 +45,7 @@ export default function Recommendations() {
           ...job,
           id: job.id || job._id,
         }));
+        console.log(formattedJobs);
         setJobListings(formattedJobs);
       } catch (error: any) {
         setError(error.message || "Failed to fetch jobs");
@@ -44,7 +62,8 @@ export default function Recommendations() {
       setModalLoading(true);
       setModalError(null);
       const data = await apiClient(`/jobs/${jobId}`);
-      setSelectedJob(data);
+      // Ensure the job ID is included with the selected job data
+      setSelectedJob({ ...data, id: jobId });
       setIsModalOpen(true);
     } catch (error) {
       console.error("Error fetching job details:", error);
@@ -54,14 +73,51 @@ export default function Recommendations() {
     }
   };
 
-
-
-  const handleApply = (applicationLink: string) => {
+  const handleApply = (applicationLink: string, jobId: string) => {
     if (applicationLink) {
+      // Store the current job ID for later use when submitting the application
+      setCurrentJobId(jobId);
+      console.log(jobId);
+      // Open the application link in a new tab
       window.open(applicationLink, "_blank");
+
+      // Close the job details modal before showing the apply modal
+      setIsModalOpen(false);
+
+      // Show the "Did you apply?" modal after a short delay
+      setTimeout(() => {
+        setShowApplyModal(true);
+      }, 100);
     } else {
       console.error("No application link provided");
       alert("Application link not available");
+    }
+  };
+
+  const handleApplicationSubmit = async () => {
+    if (currentJobId) {
+      try {
+        setIsApplying(true);
+        // Submit the application to the database
+        await apiClient("/application", {
+          data: { jobId: currentJobId },
+        });
+
+        // Close the apply modal
+        setShowApplyModal(false);
+
+        // Show success message with toast
+        showToast("Successfully applied to job!", "success");
+      } catch (err: any) {
+        showToast(
+          err.message ||
+            "You have already applied to this job! Check your JobApplications in your profile.",
+          "error"
+        );
+        setShowApplyModal(false);
+      } finally {
+        setIsApplying(false);
+      }
     }
   };
 
@@ -118,13 +174,17 @@ export default function Recommendations() {
 
       {/* Job Detail Modal */}
       <Dialog
-        open={isModalOpen}
+        open={isModalOpen && !showApplyModal}
         onClose={() => setIsModalOpen(false)}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       >
         <Dialog.Panel className="bg-white text-black max-w-2xl w-full p-6 rounded-xl shadow-lg overflow-y-auto max-h-[90vh]">
-          {modalLoading && <p className="text-center py-4">Loading job details...</p>}
-          {modalError && <p className="text-red-500 text-center py-4">{modalError}</p>}
+          {modalLoading && (
+            <p className="text-center py-4">Loading job details...</p>
+          )}
+          {modalError && (
+            <p className="text-red-500 text-center py-4">{modalError}</p>
+          )}
 
           {selectedJob && !modalLoading && !modalError && (
             <>
@@ -137,11 +197,15 @@ export default function Recommendations() {
               </div>
               <div className="flex items-center text-gray-700 mb-4">
                 <MapPinIcon className="h-4 w-4 mr-2" />
-                <span>{selectedJob.city}, {selectedJob.country}</span>
+                <span>
+                  {selectedJob.city}, {selectedJob.country}
+                </span>
               </div>
 
               <div className="bg-[#8b4513] text-white rounded-full px-4 py-1 text-sm w-fit mb-4">
-                <div className="font-bold">{selectedJob.matchScore || "85"}% Match</div>
+                <div className="font-bold">
+                  {selectedJob.matchScore || "85"}% Match
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -163,15 +227,17 @@ export default function Recommendations() {
               </div>
 
               <h2 className="font-bold mb-3 text-lg">Requirements:</h2>
-                <ul className="list-disc pl-5 mb-6 space-y-1">
+              <ul className="list-disc pl-5 mb-6 space-y-1">
                 {(Array.isArray(selectedJob.requirements)
-                    ? selectedJob.requirements
-                    : [selectedJob.requirements || "No specific requirements listed"]).map(
-                    (req: string, index: number) => (
-                    <li key={index}>{req}</li>
-                    )
-                )}
-                </ul>
+                  ? selectedJob.requirements
+                  : [
+                      selectedJob.requirements ||
+                        "No specific requirements listed",
+                    ]
+                ).map((req: string, index: number) => (
+                  <li key={index}>{req}</li>
+                ))}
+              </ul>
 
               <h2 className="font-bold mb-3 text-lg">Job Description</h2>
               <p className="mb-6">{selectedJob.description}</p>
@@ -184,16 +250,29 @@ export default function Recommendations() {
                   Close
                 </button>
                 <button
-                onClick={() => handleApply(selectedJob.applicationLink || selectedJob.applyUrl)}
-                className="px-4 py-2 bg-[#BA1B1B] text-white rounded-lg hover:bg-[#a11818]"
+                  onClick={() =>
+                    handleApply(
+                      selectedJob.applicationLink || selectedJob.applyUrl,
+                      selectedJob.id
+                    )
+                  }
+                  className="px-4 py-2 bg-[#BA1B1B] text-white rounded-lg hover:bg-[#a11818]"
                 >
-                Apply
+                  Apply
                 </button>
               </div>
             </>
           )}
         </Dialog.Panel>
       </Dialog>
+
+      {/* Did You Apply Modal */}
+      <DidYouApplyModal
+        open={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        onYes={handleApplicationSubmit}
+        isLoading={isApplying}
+      />
     </div>
   );
 }

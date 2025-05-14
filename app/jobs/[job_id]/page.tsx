@@ -11,6 +11,7 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { useParams } from "next/navigation";
 import { DidYouApplyModal } from "../components/DidYouApplyModal";
+import { useToast } from "../../context/ToastContext";
 
 export default function JobDetail() {
   const [saved, setSaved] = useState(false);
@@ -26,6 +27,7 @@ export default function JobDetail() {
     ats: number;
     response: string;
   } | null>(null);
+  const { showToast } = useToast();
 
   const params = useParams();
   const jobId = params.job_id as string;
@@ -55,10 +57,10 @@ export default function JobDetail() {
         method: "POST",
       });
       setSaved(true);
-      alert("Job saved to favorites!");
+      showToast("Job saved to favorites!", "success");
     } catch (error) {
       console.error("Error saving job:", error);
-      alert("Failed to save job. Please try again.");
+      showToast("Failed to save job. Please try again.", "error");
     }
   };
 
@@ -78,9 +80,11 @@ export default function JobDetail() {
         method: "POST",
         data: { jobId },
       });
+      showToast("Successfully applied to job!", "success");
     } catch (err: any) {
-      alert(
-        "You have already applied to this job!\nCheck your JobApplications in your profile."
+      showToast(
+        err.message || "You have already applied to this job! Check your JobApplications in your profile.",
+        "error"
       );
     } finally {
       setIsApplying(false);
@@ -99,9 +103,10 @@ export default function JobDetail() {
 
       setAtsButtonContent("ATS Available");
       setAtsData(response || "No ATS details available");
+      showToast("ATS score fetched successfully!", "success");
     } catch (error) {
       console.error("Error fetching ATS score:", error);
-      alert("Failed to fetch ATS score. Please try again.");
+      showToast("Failed to fetch ATS score. Please try again.", "error");
       setAtsButtonContent("Get ATS Score");
     } finally {
       setIsFetchingATS(false);
@@ -208,7 +213,11 @@ export default function JobDetail() {
                 <div className="flex items-center mb-2">
                   <ClockIcon className="h-4 w-4 mr-2 text-gray-600" />
                   <span>Posted 2 days ago</span>
-                </div>
+                  </div>
+                  <div className="flex items-center mb-2">
+                  <ClockIcon className="h-4 w-4 mr-2 text-gray-600" />
+                  <span>Deadline: {new Date(job.applicationDeadline).toISOString().split('T')[0]}</span>
+                  </div>
               </div>
               <div>
                 <h2 className="font-bold mb-2 text-lg">Industry</h2>
