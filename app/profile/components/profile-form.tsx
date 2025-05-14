@@ -119,8 +119,6 @@ export default function ProfileForm() {
         setNewCvFile(null);
         setSelectedCv("existing"); // Reset selection after successful upload
       }
-
-      alert("Profile updated successfully!");
     } catch (err: any) {
       setError(err.message);
     }
