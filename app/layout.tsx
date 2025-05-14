@@ -6,6 +6,7 @@ import Footer from "./components/Footer";
 import { AuthProvider } from "./context/auth-context";
 import { ToastProvider } from "./context/ToastContext";
 import Toast from "./components/Toast";
+import NagarAIChatbot from "./chatbot/NagarAIChatbot";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,6 +32,8 @@ export default function RootLayout({
             <Footer />
           </AuthProvider>
           <Toast />
+          {/* Chatbot always mounted */}
+          <NagarAIChatbot />
         </ToastProvider>
       </body>
     </html>
