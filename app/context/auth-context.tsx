@@ -10,25 +10,26 @@ import {
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useToast } from "./ToastContext";
+import { apiClient } from "@/lib/api-client";
 
 interface User {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    profile_picture_url?: string;
-    hasCV?: boolean;
-};
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  profile_picture_url?: string;
+  hasCV?: boolean;
+}
 
 interface AuthContextType {
-    user: User | null;
-    isLoading: boolean;
-    error: string | null;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (userData: any) => Promise<void>;
-    logout: () => Promise<void>;
-    updateProfile: (userId: string, userData: any) => Promise<void>;
-    refreshUserProfile: () => Promise<void>;
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (userData: any) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (userId: string, userData: any) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -184,8 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Use apiClient instead of fetch for consistent error handling
-      const updatedUserData = await apiClient('/users/my-profile', {
-        method: 'PUT',
+      const updatedUserData = await apiClient("/users/my-profile", {
+        method: "PUT",
         data: userData,
       });
 
@@ -212,37 +213,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-    };
+  };
 
-    const refreshUserProfile = async () => {
-        if (!user?.id) return;
+  const refreshUserProfile = async () => {
+    if (!user?.id) return;
 
-        setIsLoading(true);
-        try {
-            const profileData = await apiClient('/users/my-profile', {
-                method: 'GET',
-            });
+    setIsLoading(true);
+    try {
+      const profileData = await apiClient("/users/my-profile", {
+        method: "GET",
+      });
 
-            // Update the user state with fresh data including hasCV status
-            const refreshedUserData = {
-                ...user,
-                ...profileData,
-            };
+      // Update the user state with fresh data including hasCV status
+      const refreshedUserData = {
+        ...user,
+        ...profileData,
+      };
 
-            setUser(refreshedUserData);
-            Cookies.set("user", JSON.stringify(refreshedUserData), {
-                expires: 7,
-                path: "/",
-                sameSite: "strict",
-            });
-            // Removed success toast as per "user action only" guideline
-        } catch (error: any) {
-            // Not adding error toast as per "user action only" guideline for refresh
-            console.error("Failed to refresh user profile:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      setUser(refreshedUserData);
+      Cookies.set("user", JSON.stringify(refreshedUserData), {
+        expires: 7,
+        path: "/",
+        sameSite: "strict",
+      });
+      // Removed success toast as per "user action only" guideline
+    } catch (error: any) {
+      // Not adding error toast as per "user action only" guideline for refresh
+      console.error("Failed to refresh user profile:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const value = {
     user,
