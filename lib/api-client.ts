@@ -31,7 +31,7 @@ export async function apiClient(
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/v1${endpoint}`,
+      `https://tintern-server.fly.dev/api/v1${endpoint}`,
       config,
     );
 

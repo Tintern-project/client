@@ -36,7 +36,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
     const fetchFilters = async () => {
       try {
         const res = await fetch(
-          "http://localhost:3000/api/v1/jobs/unique-filters"
+          "https://tintern-server.fly.dev/api/v1/jobs/unique-filters"
         );
         if (!res.ok) {
           throw new Error("Failed to fetch filters");
@@ -64,13 +64,16 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
     setFormData(updatedFilters);
 
     try {
-      const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedFilters),
-      });
+      const res = await fetch(
+        "https://tintern-server.fly.dev/api/v1/jobs/filter",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedFilters),
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -98,7 +101,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           <select
             value={formData.industry}
             onChange={(e) => handleFilterClick("industry", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800"
+          >
             <option value="">All Industries</option>
             {filters.industries.map((industry, idx) => (
               <option key={idx} value={industry}>
@@ -114,7 +118,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           <select
             value={formData.role}
             onChange={(e) => handleFilterClick("role", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800"
+          >
             <option value="">All Roles</option>
             {staticFilters.roles.map((role, idx) => (
               <option key={idx} value={role}>
@@ -130,7 +135,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           <select
             value={formData.type}
             onChange={(e) => handleFilterClick("type", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800"
+          >
             <option value="">All Types</option>
             {staticFilters.types.map((type, idx) => (
               <option key={idx} value={type}>
@@ -146,7 +152,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
           <select
             value={formData.city}
             onChange={(e) => handleFilterClick("city", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800">
+            className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-neutral-800"
+          >
             <option value="">All Cities</option>
             {filters.cities.map((city, idx) => (
               <option key={idx} value={city}>

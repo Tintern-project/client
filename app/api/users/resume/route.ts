@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
             );
         }
         
-        const response = await fetch("http://localhost:3000/api/v1/users/resume", {
+        const response = await fetch("https://tintern-server.fly.dev/api/v1/users/resume", {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`

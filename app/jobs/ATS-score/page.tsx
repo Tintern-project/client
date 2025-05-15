@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Grid3X3,
   Clock,
@@ -13,95 +13,94 @@ import {
   RefreshCw,
   Briefcase,
   X,
-} from "lucide-react"
-import Link from "next/link"
-import { apiClient } from "@/lib/api-client"
+} from "lucide-react";
+import Link from "next/link";
+import { apiClient } from "@/lib/api-client";
 import Cookies from "js-cookie";
 
 // Define TypeScript interfaces for our data
 interface ATSScore {
-  ats: number
-  response: string
-  _id: string
+  ats: number;
+  response: string;
+  _id: string;
 }
 
 // Updated ScoreData to match new backend response
 interface ScoreData {
-  title: string
-  company: string
+  title: string;
+  company: string;
   score: {
-    _id: string
-    userId: string
-    jobId: string
-    atsScore: ATSScore
-    resumeHash: string
-    scoredAt: string
-    __v: number
-  }
+    _id: string;
+    userId: string;
+    jobId: string;
+    atsScore: ATSScore;
+    resumeHash: string;
+    scoredAt: string;
+    __v: number;
+  };
 }
 
 interface JobDetails {
-  _id: string
-  title: string
-  company: string
-  location: string
-  description: string
-  requirements: string[]
-  [key: string]: any // For any additional fields
+  _id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  requirements: string[];
+  [key: string]: any; // For any additional fields
 }
 
-
 export default function ATSScorePage() {
-  const [atsScores, setAtsScores] = useState<ScoreData[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState("grid") // "grid" or "timeline"
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [atsScores, setAtsScores] = useState<ScoreData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState("grid"); // "grid" or "timeline"
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // States for recalculating ATS score
-  const [recalculatingId, setRecalculatingId] = useState<string | null>(null)
+  const [recalculatingId, setRecalculatingId] = useState<string | null>(null);
 
   // States for job details modal
-  const [isJobModalOpen, setIsJobModalOpen] = useState(false)
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
-  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null)
-  const [isJobLoading, setIsJobLoading] = useState(false)
-  const [jobError, setJobError] = useState<string | null>(null)
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
+  const [isJobLoading, setIsJobLoading] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        setIsLoading(true)
-        const data = await apiClient("/ats-scores/my-scores")
-        setAtsScores(data)
+        setIsLoading(true);
+        const data = await apiClient("/ats-scores/my-scores");
+        setAtsScores(data);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch ATS scores")
+        setError(err.message || "Failed to fetch ATS scores");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchScores()
-  }, [])
+    fetchScores();
+  }, []);
 
-  const getScoreColor = (score: number) => { 
-    if (score >= 70) return "from-emerald-500 to-green-600"
-    if (score <70 && score >= 30) return "from-amber-500 to-orange-600"
-    if (score < 30) return "from-red-500 to-red-600"
-    return "from-red-500 to-rose-600"
-  }
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return "from-emerald-500 to-green-600";
+    if (score < 70 && score >= 30) return "from-amber-500 to-orange-600";
+    if (score < 30) return "from-red-500 to-red-600";
+    return "from-red-500 to-rose-600";
+  };
 
   const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id)
-  }
+    setExpandedId(expandedId === id ? null : id);
+  };
 
   const handleRecalculateATS = async (jobId: string, scoreId: string) => {
     try {
-      setRecalculatingId(scoreId)
+      setRecalculatingId(scoreId);
       // Call the API to recalculate the ATS score
       const response = await apiClient(`/jobs/ats/${jobId}`, {
         method: "GET",
-      })
+      });
       // Update the score in the local state most of the time will remain the same unless user changes the CV
       setAtsScores((prevScores) =>
         prevScores.map((item) =>
@@ -118,42 +117,41 @@ export default function ATSScorePage() {
                   scoredAt: new Date().toISOString(),
                 },
               }
-            : item,
-        ),
-      )
+            : item
+        )
+      );
       // Show success notification (could be implemented with a toast)
-      console.log("ATS score recalculated successfully")
+      console.log("ATS score recalculated successfully");
     } catch (error) {
-      console.error("Error recalculating ATS score:", error)
-      alert("Failed to recalculate ATS score. Please try again.")
+      console.error("Error recalculating ATS score:", error);
+      alert("Failed to recalculate ATS score. Please try again.");
     } finally {
-      setRecalculatingId(null)
+      setRecalculatingId(null);
     }
-  }
+  };
 
   const openJobDetails = async (jobId: string) => {
     try {
-        const token = Cookies.get("token"); // this is a farmer way what that what my thinking got me to do since the id is not in the params request here
-      setIsJobLoading(true)
-      window.location.href = `http://localhost:3001/jobs/${jobId}`;
+      const token = Cookies.get("token"); // this is a farmer way what that what my thinking got me to do since the id is not in the params request here
+      setIsJobLoading(true);
+      window.location.href = `https://tintern-client.fly.dev/jobs/${jobId}`;
     } catch (err: any) {
-      console.error("Error fetching job details:", err)
-      setJobError(err.message || "Failed to load job details")
+      console.error("Error fetching job details:", err);
+      setJobError(err.message || "Failed to load job details");
     } finally {
-      setIsJobLoading(false)
+      setIsJobLoading(false);
     }
-    
-  }
+  };
 
   const closeJobModal = () => {
-    setIsJobModalOpen(false)
-    setSelectedJobId(null)
-    setJobDetails(null)
-  }
+    setIsJobModalOpen(false);
+    setSelectedJobId(null);
+    setJobDetails(null);
+  };
 
-  if (isLoading) return <LoadingState />
-  if (error) return <div className="text-red-500 text-center p-8">{error}</div>
-  if (!atsScores || atsScores.length === 0) return <EmptyState />
+  if (isLoading) return <LoadingState />;
+  if (error) return <div className="text-red-500 text-center p-8">{error}</div>;
+  if (!atsScores || atsScores.length === 0) return <EmptyState />;
 
   return (
     <div className="min-h-screen bg-[#121212] text-white p-4 md:p-8">
@@ -168,14 +166,18 @@ export default function ATSScorePage() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
               Your ATS Scores
             </h1>
-            <p className="text-gray-400 mt-2">Track how your resume performs against job requirements</p>
+            <p className="text-gray-400 mt-2">
+              Track how your resume performs against job requirements
+            </p>
           </div>
 
           <div className="flex items-center space-x-2 bg-[#1E1E1E] p-1 rounded-lg">
             <button
               onClick={() => setViewMode("grid")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                viewMode === "grid" ? "bg-[#BA1B1B] text-white" : "text-gray-400 hover:text-white"
+                viewMode === "grid"
+                  ? "bg-[#BA1B1B] text-white"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               <Grid3X3 size={18} />
@@ -184,7 +186,9 @@ export default function ATSScorePage() {
             <button
               onClick={() => setViewMode("timeline")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                viewMode === "timeline" ? "bg-[#BA1B1B] text-white" : "text-gray-400 hover:text-white"
+                viewMode === "timeline"
+                  ? "bg-[#BA1B1B] text-white"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               <Clock size={18} />
@@ -210,7 +214,9 @@ export default function ATSScorePage() {
                   isExpanded={expandedId === item.score._id}
                   toggleExpand={() => toggleExpand(item.score._id)}
                   scoreColor={getScoreColor(item.score.atsScore.ats)}
-                  onRecalculate={() => handleRecalculateATS(item.score.jobId, item.score._id)}
+                  onRecalculate={() =>
+                    handleRecalculateATS(item.score.jobId, item.score._id)
+                  }
                   isRecalculating={recalculatingId === item.score._id}
                   onViewJobDetails={() => openJobDetails(item.score.jobId)}
                 />
@@ -229,7 +235,9 @@ export default function ATSScorePage() {
                 expandedId={expandedId}
                 toggleExpand={toggleExpand}
                 getScoreColor={getScoreColor}
-                onRecalculate={(jobId, scoreId) => handleRecalculateATS(jobId, scoreId)}
+                onRecalculate={(jobId, scoreId) =>
+                  handleRecalculateATS(jobId, scoreId)
+                }
                 recalculatingId={recalculatingId}
                 onViewJobDetails={openJobDetails}
               />
@@ -249,7 +257,10 @@ export default function ATSScorePage() {
           >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold">Job Details</h2>
-              <button onClick={closeJobModal} className="p-2 rounded-full hover:bg-[#2A2A2A] transition-colors">
+              <button
+                onClick={closeJobModal}
+                className="p-2 rounded-full hover:bg-[#2A2A2A] transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -261,7 +272,9 @@ export default function ATSScorePage() {
             )}
 
             {jobError && (
-              <div className="bg-red-900/20 border border-red-900 text-red-200 p-4 rounded-lg">{jobError}</div>
+              <div className="bg-red-900/20 border border-red-900 text-red-200 p-4 rounded-lg">
+                {jobError}
+              </div>
             )}
 
             {jobDetails && !isJobLoading && (
@@ -269,24 +282,31 @@ export default function ATSScorePage() {
                 <div>
                   <h3 className="text-xl font-bold">{jobDetails.title}</h3>
                   <p className="text-gray-400">{jobDetails.company}</p>
-                  {jobDetails.location && <p className="text-gray-400">{jobDetails.location}</p>}
+                  {jobDetails.location && (
+                    <p className="text-gray-400">{jobDetails.location}</p>
+                  )}
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-lg mb-2">Description</h4>
-                  <p className="text-gray-300 whitespace-pre-line">{jobDetails.description}</p>
+                  <p className="text-gray-300 whitespace-pre-line">
+                    {jobDetails.description}
+                  </p>
                 </div>
 
-                {jobDetails.requirements && jobDetails.requirements.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-lg mb-2">Requirements</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-gray-300">
-                      {jobDetails.requirements.map((req, index) => (
-                        <li key={index}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {jobDetails.requirements &&
+                  jobDetails.requirements.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-lg mb-2">
+                        Requirements
+                      </h4>
+                      <ul className="list-disc pl-5 space-y-1 text-gray-300">
+                        {jobDetails.requirements.map((req, index) => (
+                          <li key={index}>{req}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                 <div className="pt-4 flex justify-end">
                   <button
@@ -302,7 +322,7 @@ export default function ATSScorePage() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // Score Card Component
@@ -315,28 +335,30 @@ function ScoreCard({
   isRecalculating,
   onViewJobDetails,
 }: {
-  scoreData: ScoreData
-  isExpanded: boolean
-  toggleExpand: () => void
-  scoreColor: string
-  onRecalculate: () => void
-  isRecalculating: boolean
-  onViewJobDetails: () => void
+  scoreData: ScoreData;
+  isExpanded: boolean;
+  toggleExpand: () => void;
+  scoreColor: string;
+  onRecalculate: () => void;
+  isRecalculating: boolean;
+  onViewJobDetails: () => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false)
-  const { score, title, company } = scoreData
+  const [isHovered, setIsHovered] = useState(false);
+  const { score, title, company } = scoreData;
   // Format date
   const formattedDate = new Date(score.scoredAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  })
+  });
   // Extract keywords from response
   const extractKeywords = (response: string) => {
-    const keywords = response.match(/\b(skills|experience|projects|frameworks|tools|metrics|highlight)\b/gi)
-    return keywords ? [...new Set(keywords)].slice(0, 3) : []
-  }
-  const keywords = extractKeywords(score.atsScore.response)
+    const keywords = response.match(
+      /\b(skills|experience|projects|frameworks|tools|metrics|highlight)\b/gi
+    );
+    return keywords ? [...new Set(keywords)].slice(0, 3) : [];
+  };
+  const keywords = extractKeywords(score.atsScore.response);
   return (
     <motion.div
       layout
@@ -346,7 +368,9 @@ function ScoreCard({
       whileHover={{ y: -5 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`relative overflow-hidden rounded-xl bg-[#1E1E1E] shadow-lg ${isExpanded ? "shadow-2xl" : ""}`}
+      className={`relative overflow-hidden rounded-xl bg-[#1E1E1E] shadow-lg ${
+        isExpanded ? "shadow-2xl" : ""
+      }`}
     >
       {/* Glowing effect on hover */}
       <motion.div
@@ -357,8 +381,12 @@ function ScoreCard({
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-bold truncate max-w-[200px]">{title}</h3>
-            <p className="text-gray-400 text-sm truncate max-w-[200px]">{company}</p>
+            <h3 className="text-xl font-bold truncate max-w-[200px]">
+              {title}
+            </h3>
+            <p className="text-gray-400 text-sm truncate max-w-[200px]">
+              {company}
+            </p>
             <div className="flex items-center text-gray-400 text-sm mt-1">
               <Calendar size={14} className="mr-1" />
               <span>{formattedDate}</span>
@@ -376,7 +404,10 @@ function ScoreCard({
         {keywords.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {keywords.map((keyword, index) => (
-              <span key={index} className="px-2 py-1 bg-[#2A2A2A] rounded-full text-xs text-gray-300">
+              <span
+                key={index}
+                className="px-2 py-1 bg-[#2A2A2A] rounded-full text-xs text-gray-300"
+              >
                 {keyword}
               </span>
             ))}
@@ -390,7 +421,10 @@ function ScoreCard({
         >
           <div className="pt-4 border-t border-gray-800">
             <div className="flex items-start gap-2 mb-4">
-              <Lightbulb size={18} className="text-yellow-500 mt-1 flex-shrink-0" />
+              <Lightbulb
+                size={18}
+                className="text-yellow-500 mt-1 flex-shrink-0"
+              />
               <p className="text-gray-300 text-sm">{score.atsScore.response}</p>
             </div>
             <div className="flex flex-wrap gap-3 mt-4">
@@ -410,8 +444,13 @@ function ScoreCard({
                     : "text-white bg-[#BA1B1B] hover:bg-[#D32F2F]"
                 }`}
               >
-                <RefreshCw size={14} className={isRecalculating ? "animate-spin" : ""} />
-                <span>{isRecalculating ? "Recalculating..." : "Recalculate Score"}</span>
+                <RefreshCw
+                  size={14}
+                  className={isRecalculating ? "animate-spin" : ""}
+                />
+                <span>
+                  {isRecalculating ? "Recalculating..." : "Recalculate Score"}
+                </span>
               </button>
             </div>
           </div>
@@ -425,7 +464,7 @@ function ScoreCard({
         </button>
       </div>
     </motion.div>
-  )
+  );
 }
 
 // Timeline Component
@@ -438,31 +477,38 @@ function ScoreTimeline({
   recalculatingId,
   onViewJobDetails,
 }: {
-  scores: ScoreData[]
-  expandedId: string | null
-  toggleExpand: (id: string) => void
-  getScoreColor: (score: number) => string
-  onRecalculate: (jobId: string, scoreId: string) => void
-  recalculatingId: string | null
-  onViewJobDetails: (jobId: string) => void
+  scores: ScoreData[];
+  expandedId: string | null;
+  toggleExpand: (id: string) => void;
+  getScoreColor: (score: number) => string;
+  onRecalculate: (jobId: string, scoreId: string) => void;
+  recalculatingId: string | null;
+  onViewJobDetails: (jobId: string) => void;
 }) {
   // Sort scores by date (newest first)
-  const sortedScores = [...scores].sort((a, b) => new Date(b.score.scoredAt).getTime() - new Date(a.score.scoredAt).getTime())
+  const sortedScores = [...scores].sort(
+    (a, b) =>
+      new Date(b.score.scoredAt).getTime() -
+      new Date(a.score.scoredAt).getTime()
+  );
   return (
     <div className="relative">
       {/* Timeline line */}
       <div className="absolute left-[22px] top-8 bottom-0 w-1 bg-gradient-to-b from-[#BA1B1B] to-[#2A2A2A] rounded-full" />
       <div className="space-y-8">
         {sortedScores.map((item, index) => {
-          const { score, title, company } = item
-          const formattedDate = new Date(score.scoredAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-          const isExpanded = expandedId === score._id
-          const scoreColor = getScoreColor(score.atsScore.ats)
-          const isRecalculating = recalculatingId === score._id
+          const { score, title, company } = item;
+          const formattedDate = new Date(score.scoredAt).toLocaleDateString(
+            "en-US",
+            {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }
+          );
+          const isExpanded = expandedId === score._id;
+          const scoreColor = getScoreColor(score.atsScore.ats);
+          const isRecalculating = recalculatingId === score._id;
           return (
             <motion.div
               key={score._id}
@@ -477,14 +523,20 @@ function ScoreTimeline({
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                <span className="text-base font-bold">{score.atsScore.ats}%</span>
+                <span className="text-base font-bold">
+                  {score.atsScore.ats}%
+                </span>
               </motion.div>
               <div className="bg-[#1E1E1E] rounded-xl overflow-hidden shadow-lg">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold truncate max-w-[200px]">{title}</h3>
-                      <p className="text-gray-400 text-sm truncate max-w-[200px]">{company}</p>
+                      <h3 className="text-xl font-bold truncate max-w-[200px]">
+                        {title}
+                      </h3>
+                      <p className="text-gray-400 text-sm truncate max-w-[200px]">
+                        {company}
+                      </p>
                       <div className="flex items-center text-gray-400 text-sm mt-1">
                         <Calendar size={14} className="mr-1" />
                         <span>{formattedDate}</span>
@@ -499,8 +551,13 @@ function ScoreTimeline({
                   >
                     <div className="pt-4 border-t border-gray-800">
                       <div className="flex items-start gap-2 mb-4">
-                        <Lightbulb size={18} className="text-yellow-500 mt-1 flex-shrink-0" />
-                        <p className="text-gray-300 text-sm">{score.atsScore.response}</p>
+                        <Lightbulb
+                          size={18}
+                          className="text-yellow-500 mt-1 flex-shrink-0"
+                        />
+                        <p className="text-gray-300 text-sm">
+                          {score.atsScore.response}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-3 mt-4">
                         <button
@@ -519,8 +576,15 @@ function ScoreTimeline({
                               : "text-white bg-[#BA1B1B] hover:bg-[#D32F2F]"
                           }`}
                         >
-                          <RefreshCw size={14} className={isRecalculating ? "animate-spin" : ""} />
-                          <span>{isRecalculating ? "Recalculating..." : "Recalculate Score"}</span>
+                          <RefreshCw
+                            size={14}
+                            className={isRecalculating ? "animate-spin" : ""}
+                          />
+                          <span>
+                            {isRecalculating
+                              ? "Recalculating..."
+                              : "Recalculate Score"}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -530,16 +594,20 @@ function ScoreTimeline({
                     onClick={() => toggleExpand(score._id)}
                     className="w-full flex justify-center items-center mt-2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    {isExpanded ? (
+                      <ChevronUp size={20} />
+                    ) : (
+                      <ChevronDown size={20} />
+                    )}
                   </button>
                 </div>
               </div>
             </motion.div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 // Empty State Component
@@ -558,7 +626,8 @@ function EmptyState() {
 
         <h2 className="text-2xl font-bold mb-3">No ATS Scores Yet</h2>
         <p className="text-gray-400 mb-6">
-          Upload your resume and apply to jobs to see how well your resume matches job requirements.
+          Upload your resume and apply to jobs to see how well your resume
+          matches job requirements.
         </p>
 
         <Link
@@ -569,13 +638,13 @@ function EmptyState() {
         </Link>
       </div>
     </motion.div>
-  )
+  );
 }
 
 // Loading State Component
 function LoadingState() {
   // Create an array of 6 items for skeleton cards
-  const skeletonCards = Array.from({ length: 6 }, (_, i) => i)
+  const skeletonCards = Array.from({ length: 6 }, (_, i) => i);
 
   return (
     <div className="min-h-screen bg-[#121212] text-white p-4 md:p-8">
@@ -620,5 +689,5 @@ function LoadingState() {
         </div>
       </div>
     </div>
-  )
+  );
 }

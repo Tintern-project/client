@@ -16,7 +16,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:3000/api/v1/jobs/filter", {
+      const res = await fetch("https://tintern-server.fly.dev/api/v1/jobs/filter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

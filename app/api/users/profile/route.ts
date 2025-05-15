@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const response = await fetch(
-      "http://localhost:3000/api/v1/users/my-profile",
+      "https://tintern-server.fly.dev/api/v1/users/my-profile",
       {
         method: "PUT",
         headers: {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      "http://localhost:3000/api/v1/users/my-profile",
+      "https://tintern-server.fly.dev/api/v1/users/my-profile",
       {
         method: "GET",
         headers: {

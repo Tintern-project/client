@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         // Forward request to backend
         console.log("POST Education - Sending to backend:", body);
         const response = await fetch(
-            `http://localhost:3000/api/v1/users/education`,
+            `https://tintern-server.fly.dev/api/v1/users/education`,
             {
                 method: "POST",
                 headers: {
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         // Forward request to backend
         console.log("GET Education - Fetching from backend");
         const response = await fetch(
-            `http://localhost:3000/api/v1/users/education`,
+            `https://tintern-server.fly.dev/api/v1/users/education`,
             {
                 method: "GET",
                 headers: {

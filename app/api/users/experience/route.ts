@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         // Forward request to backend
         console.log("POST Experience - Sending to backend:", body);
         const response = await fetch(
-            `http://localhost:3000/api/v1/users/experience`,
+            `https://tintern-server.fly.dev/api/v1/users/experience`,
             {
                 method: "POST",
                 headers: {
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         // Forward request to backend
         console.log("GET Experience - Fetching from backend");
         const response = await fetch(
-            `http://localhost:3000/api/v1/users/experience`,
+            `https://tintern-server.fly.dev/api/v1/users/experience`,
             {
                 method: "GET",
                 headers: {
