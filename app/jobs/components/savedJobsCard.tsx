@@ -51,10 +51,8 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
         method: "DELETE",
       });
   
-      console.log(`Deleted job: ${title} at ${company}`);
       onDelete(id); // Update parent state to remove the job card
     } catch (err) {
-      console.error("Error deleting job:", err);
       // Error handling is already centralized in apiClient (including 401 redirect)
     } finally {
       setIsDeleting(false);
@@ -65,7 +63,6 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
     if (applicationLink) {
       window.open(applicationLink, "_blank")
     } else {
-      console.error("No application link provided")
     }
   }
 

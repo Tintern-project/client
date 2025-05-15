@@ -94,7 +94,6 @@ export function JobCard({
       const data = await apiClient(`/jobs/ats/${jobId}`)
       setAtsData(data)
     } catch (error) {
-      console.error("Error fetching ATS data:", error)
     } finally {
       setIsLoadingAts(false)
     }

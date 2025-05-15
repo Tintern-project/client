@@ -45,12 +45,10 @@ export async function POST(request: NextRequest) {
 
         // Parse and validate request body
         const body = await request.json();
-        console.log("POST Education - Request body:", body);
 
         // Validate education data
         const validation = validateEducationData(body);
         if (!validation.valid) {
-            console.error("POST Education - Validation error:", validation.error);
             return NextResponse.json(
                 { error: validation.error },
                 { status: 400 }
@@ -58,7 +56,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Forward request to backend
-        console.log("POST Education - Sending to backend:", body);
         const response = await fetch(
             `https://tintern-server.fly.dev/api/v1/users/education`,
             {
@@ -78,14 +75,12 @@ export async function POST(request: NextRequest) {
             data = await response.json();
         } else {
             const text = await response.text();
-            console.error("POST Education - Non-JSON response:", text);
             return NextResponse.json(
                 { error: "Invalid response from server" },
                 { status: 500 }
             );
         }
 
-        console.log("POST Education - Backend response:", { status: response.status, data });
 
         // Handle error response
         if (!response.ok) {
@@ -98,7 +93,6 @@ export async function POST(request: NextRequest) {
         // Return success response
         return NextResponse.json(data, { status: 201 });
     } catch (error) {
-        console.error("POST Education - Unhandled error:", error);
         return NextResponse.json(
             { error: "Failed to create education entry" },
             { status: 500 }
@@ -119,7 +113,6 @@ export async function GET(request: NextRequest) {
         }
 
         // Forward request to backend
-        console.log("GET Education - Fetching from backend");
         const response = await fetch(
             `https://tintern-server.fly.dev/api/v1/users/education`,
             {
@@ -138,14 +131,12 @@ export async function GET(request: NextRequest) {
             data = await response.json();
         } else {
             const text = await response.text();
-            console.error("GET Education - Non-JSON response:", text);
             return NextResponse.json(
                 { error: "Invalid response from server" },
                 { status: 500 }
             );
         }
 
-        console.log("GET Education - Backend response:", { status: response.status, data });
 
         // Handle error response
         if (!response.ok) {
@@ -158,19 +149,16 @@ export async function GET(request: NextRequest) {
         // Normalize response format
         // If the backend returns an array directly, wrap it in an object
         if (Array.isArray(data)) {
-            console.log("GET Education - Converting array to object with educations property");
             data = { educations: data };
         }
         // If the backend doesn't include an educations array, add an empty one
         else if (!data.educations) {
-            console.log("GET Education - Adding empty educations array to response");
             data.educations = [];
         }
 
         // Return success response
         return NextResponse.json(data);
     } catch (error) {
-        console.error("GET Education - Unhandled error:", error);
         return NextResponse.json(
             { error: "Failed to fetch education entries" },
             { status: 500 }

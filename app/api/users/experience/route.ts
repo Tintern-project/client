@@ -39,12 +39,9 @@ export async function POST(request: NextRequest) {
 
         // Parse and validate request body
         const body = await request.json();
-        console.log("POST Experience - Request body:", body);
-
         // Validate experience data
         const validation = validateExperienceData(body);
         if (!validation.valid) {
-            console.error("POST Experience - Validation error:", validation.error);
             return NextResponse.json(
                 { error: validation.error },
                 { status: 400 }
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Forward request to backend
-        console.log("POST Experience - Sending to backend:", body);
         const response = await fetch(
             `https://tintern-server.fly.dev/api/v1/users/experience`,
             {
@@ -72,14 +68,12 @@ export async function POST(request: NextRequest) {
             data = await response.json();
         } else {
             const text = await response.text();
-            console.error("POST Experience - Non-JSON response:", text);
             return NextResponse.json(
                 { error: "Invalid response from server" },
                 { status: 500 }
             );
         }
 
-        console.log("POST Experience - Backend response:", { status: response.status, data });
 
         // Handle error response
         if (!response.ok) {
@@ -92,7 +86,6 @@ export async function POST(request: NextRequest) {
         // Return success response
         return NextResponse.json(data, { status: 201 });
     } catch (error) {
-        console.error("POST Experience - Unhandled error:", error);
         return NextResponse.json(
             { error: "Failed to create experience" },
             { status: 500 }
@@ -113,7 +106,6 @@ export async function GET(request: NextRequest) {
         }
 
         // Forward request to backend
-        console.log("GET Experience - Fetching from backend");
         const response = await fetch(
             `https://tintern-server.fly.dev/api/v1/users/experience`,
             {
@@ -132,14 +124,12 @@ export async function GET(request: NextRequest) {
             data = await response.json();
         } else {
             const text = await response.text();
-            console.error("GET Experience - Non-JSON response:", text);
             return NextResponse.json(
                 { error: "Invalid response from server" },
                 { status: 500 }
             );
         }
 
-        console.log("GET Experience - Backend response:", { status: response.status, data });
 
         // Handle error response
         if (!response.ok) {
@@ -152,19 +142,16 @@ export async function GET(request: NextRequest) {
         // Normalize response format
         // If the backend returns an array directly, wrap it in an object
         if (Array.isArray(data)) {
-            console.log("GET Experience - Converting array to object with experiences property");
             data = { experiences: data };
         }
         // If the backend doesn't include an experiences array, add an empty one
         else if (!data.experiences) {
-            console.log("GET Experience - Adding empty experiences array to response");
             data.experiences = [];
         }
 
         // Return success response
         return NextResponse.json(data);
     } catch (error) {
-        console.error("GET Experience - Unhandled error:", error);
         return NextResponse.json(
             { error: "Failed to fetch experiences" },
             { status: 500 }

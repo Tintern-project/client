@@ -33,7 +33,6 @@ const JobCard: React.FC<JobCardProps> = ({
             try {
                 await onAddToFavorites(_id);
             } catch (error) {
-                console.error("Error saving job:", error);
             }
         }
     };

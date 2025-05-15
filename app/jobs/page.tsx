@@ -64,7 +64,6 @@ function JobSearchPageList() {
       });
       showToast("Job saved to favorites!", "success");
     } catch (error: any) {
-      console.error("Error saving job:", error);
       showToast(
         error.message || "Failed to save job. Please try again.",
         "error",

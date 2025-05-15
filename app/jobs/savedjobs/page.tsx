@@ -38,7 +38,6 @@ function SavedJobsPage() {
 
       setSavedJobs(formattedJobs);
     } catch (err: any) {
-      console.error("Failed to fetch saved jobs:", err);
       const errorMessage = err.message || "Failed to fetch saved jobs";
       setError(errorMessage);
       showToast(errorMessage, "error");

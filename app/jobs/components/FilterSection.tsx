@@ -44,7 +44,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
         const data = await res.json();
         setFilters(data); // Set the dynamic filters in state
       } catch (error: any) {
-        console.error("Error fetching filters:", error.message);
         setError("Failed to load filters. Please try again.");
       }
     };
@@ -86,7 +85,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onResults }) => {
     } catch (error: any) {
       const errorMessage = error.message || "Failed to filter jobs";
       showToast(errorMessage, "error");
-      console.error("Error fetching jobs:", error.message);
     }
   };
 

@@ -39,7 +39,6 @@ export default function JobDetail() {
         const data = await apiClient(`/jobs/${jobId}`);
         setJob(data);
       } catch (err) {
-        console.error("Error fetching job details:", err);
         setError("Failed to load job details");
       } finally {
         setLoading(false);
@@ -59,7 +58,6 @@ export default function JobDetail() {
       setSaved(true);
       showToast("Job saved to favorites!", "success");
     } catch (error) {
-      console.error("Error saving job:", error);
       showToast("Failed to save job. Please try again.", "error");
     }
   };
@@ -69,7 +67,6 @@ export default function JobDetail() {
     if (job?.applicationLink) {
       window.open(job.applicationLink, "_blank");
     } else {
-      console.error("No application link provided");
     }
   };
 
@@ -105,7 +102,6 @@ export default function JobDetail() {
       setAtsData(response || "No ATS details available");
       showToast("ATS score fetched successfully!", "success");
     } catch (error) {
-      console.error("Error fetching ATS score:", error);
       showToast("Failed to fetch ATS score. Please try again.", "error");
       setAtsButtonContent("Get ATS Score");
     } finally {

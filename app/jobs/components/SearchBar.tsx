@@ -36,7 +36,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
       const errorMessage = error.message || "Failed to fetch jobs";
       setError(errorMessage);
       showToast(errorMessage, "error");
-      console.error("Error fetching jobs:", error);
     } finally {
       setIsLoading(false);
     }
