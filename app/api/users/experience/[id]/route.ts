@@ -1,16 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import config from "../../../../config";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     console.log("[PUT Experience] Starting request handling");
     try {
-        const { id } = params;
+        const { id } = await context.params;
         console.log("[PUT Experience] Received ID:", id);
 
         const body = await request.json();
         console.log("[PUT Experience] Request body:", JSON.stringify(body, null, 2));
 
-        console.log("[PUT Experience] Forwarding to backend:", `http://localhost:3000/api/v1/users/experience/${id}`);
-        const backendResponse = await fetch(`http://localhost:3000/api/v1/users/experience/${id}`, {
+        console.log("[PUT Experience] Forwarding to backend:", `${config.apiUrl}/api/v1/users/experience/${id}`);
+        const backendResponse = await fetch(`${config.apiUrl}/api/v1/users/experience/${id}`, {
             method: 'PUT',
             headers: request.headers,
             body: JSON.stringify(body)
@@ -40,14 +41,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     console.log("[DELETE Experience] Starting request handling");
     try {
-        const { id } = params;
+        const { id } = await context.params;
         console.log("[DELETE Experience] Received ID:", id);
 
-        console.log("[DELETE Experience] Forwarding to backend:", `http://localhost:3000/api/v1/users/experience/${id}`);
-        const backendResponse = await fetch(`http://localhost:3000/api/v1/users/experience/${id}`, {
+        console.log("[DELETE Experience] Forwarding to backend:", `${config.apiUrl}/api/v1/users/experience/${id}`);
+        const backendResponse = await fetch(`${config.apiUrl}/api/v1/users/experience/${id}`, {
             method: 'DELETE',
             headers: request.headers
         });

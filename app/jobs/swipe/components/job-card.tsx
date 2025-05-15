@@ -288,8 +288,8 @@ export function JobCard({
             <button
               className="mt-3 sm:mt-4 bg-[#333] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md flex items-center justify-center w-full select-none text-sm sm:text-base"
               onClick={() => {
-                if (!showDetails) {
-                  fetchAtsScore(currentJob.id)
+                if (!showDetails && currentJob && currentJob.id) {
+                  fetchAtsScore(currentJob.id.toString())
                 }
                 // Toggle details without resetting ATS data
                 setShowDetails(!showDetails)

@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import config from "../../../../config";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params;
+        const { id } = await context.params;
         const body = await request.json();
-        const backendResponse = await fetch(`http://localhost:3000/api/v1/users/education/${id}`, {
+        const backendResponse = await fetch(`${config.apiUrl}/api/v1/users/education/${id}`, {
             method: 'PUT',
             headers: request.headers,
             body: JSON.stringify(body)
@@ -15,10 +16,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params;
-        const backendResponse = await fetch(`http://localhost:3000/api/v1/users/education/${id}`, {
+        const { id } = await context.params;
+        const backendResponse = await fetch(`${config.apiUrl}/api/v1/users/education/${id}`, {
             method: 'DELETE',
             headers: request.headers
         });
