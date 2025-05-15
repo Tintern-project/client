@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
             const responseText = await response.text();
-            console.error("Upload failed with status:", response.status, responseText);
             let errorMessage = "Failed to upload resume";
             
             try {
@@ -56,7 +55,6 @@ export async function POST(request: NextRequest) {
             ...data
         });
     } catch (error) {
-        console.error("Resume upload error:", error);
         return NextResponse.json(
             { error: error instanceof Error ? error.message : "Failed to upload resume" },
             { status: 500 }

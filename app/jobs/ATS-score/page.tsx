@@ -120,10 +120,7 @@ export default function ATSScorePage() {
             : item
         )
       );
-      // Show success notification (could be implemented with a toast)
-      console.log("ATS score recalculated successfully");
     } catch (error) {
-      console.error("Error recalculating ATS score:", error);
       alert("Failed to recalculate ATS score. Please try again.");
     } finally {
       setRecalculatingId(null);
@@ -136,7 +133,6 @@ export default function ATSScorePage() {
       setIsJobLoading(true);
       window.location.href = `https://tintern-client.fly.dev/jobs/${jobId}`;
     } catch (err: any) {
-      console.error("Error fetching job details:", err);
       setJobError(err.message || "Failed to load job details");
     } finally {
       setIsJobLoading(false);

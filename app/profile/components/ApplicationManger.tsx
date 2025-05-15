@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api-client"; // Import the apiClient
 import Popup from "./ui/popup";
+import { Cookie } from "js-cookie";
 
 export interface Application {
   _id: string;
@@ -64,7 +65,7 @@ const ApplicationsManager = ({
 
       setApplications(updatedApplications);
 
-      const token = localStorage.getItem("token");
+      const token = Cookie.get("token");
       const response = await fetch(
         `https://tintern-server.fly.dev/api/v1/application/${applicationToUpdate.jobId}`,
         {
@@ -83,8 +84,6 @@ const ApplicationsManager = ({
 
       // Handle unauthorized responses
       if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
@@ -96,11 +95,7 @@ const ApplicationsManager = ({
         throw new Error(data.message || "Failed to update status");
       }
 
-      console.log(
-        `Successfully updated application ${applicationId} status to ${newStatus}`
-      );
     } catch (err) {
-      console.error("Error updating application status:", err);
       setApplications(originalApplications);
       setError(
         err instanceof Error
@@ -142,7 +137,6 @@ const ApplicationsManager = ({
               company: jobData.company || "Unknown Company",
             };
           } catch (err) {
-            console.error(`Failed to fetch details for job ${app.jobId}:`, err);
             // Return application with placeholder values
             return {
               ...app,
@@ -159,7 +153,6 @@ const ApplicationsManager = ({
           ? err.message
           : "Failed to fetch applications. Please try again."
       );
-      console.error("Application fetch error:", err);
     }
   };
 
@@ -187,11 +180,6 @@ const ApplicationsManager = ({
         <select
           value={application.status}
           onChange={(e) => {
-            console.log("Select changed for application:", {
-              id: application._id,
-              jobId: application.jobId,
-              status: e.target.value,
-            });
             handleChange(application._id, e);
           }}
           disabled={isApplicationUpdating(application._id)}

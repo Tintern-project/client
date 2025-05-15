@@ -5,6 +5,7 @@ import { FormInput } from "@/app/profile/components/ui/form-input";
 import { Button } from "@/app/profile/components/ui/button";
 import { X, Plus } from "lucide-react";
 import Popup from "./ui/popup"; // Update to use the new Popup component
+import Cookies from "js-cookie"
 
 export interface Experience {
     id?: string;
@@ -87,7 +88,6 @@ const ExperienceManager = ({
         try {
             return await response.json();
         } catch (e) {
-            console.error('Failed to parse JSON response:', e);
             throw new Error('Invalid response from server');
         }
     };
@@ -118,18 +118,14 @@ const ExperienceManager = ({
 
     const removeExperience = async (index: number) => {
         const expToRemove = experiences[index];
-        console.log('[DELETE] Initiating removal for experience:', expToRemove);
 
         if (!expToRemove.id) {
-            console.log('[DELETE] Local-only experience removed');
             setExperiences(prev => prev.filter((_, i) => i !== index));
             return;
         }
 
         try {
-            console.log('[DELETE] Attempting API deletion for ID:', expToRemove.id);
-            const token = localStorage.getItem('token');
-            console.log('[DELETE] Using token:', token ? 'exists' : 'missing');
+            const token = Cookies.get("token");
 
             const response = await fetch(`/api/users/experience/${expToRemove.id}`, {
                 method: 'DELETE',
@@ -139,31 +135,17 @@ const ExperienceManager = ({
                 },
             });
 
-            console.log('[DELETE] Response status:', response.status);
-            console.log('[DELETE] Response headers:', response.headers);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[DELETE] Server error response:', errorText);
                 throw new Error(errorText || 'Failed to delete experience');
             }
 
-            const responseData = await response.json();
-            console.log('[DELETE] Success response:', responseData);
+            await response.json();
 
             setExperiences(prev => prev.filter((_, i) => i !== index));
-            console.log('[DELETE] UI updated optimistically');
 
         } catch (err: any) {
-            console.error('[DELETE] Full error:', err);
-            if (err instanceof Error) {
-                console.error('[DELETE] Error details:', {
-                    message: err.message,
-                    stack: err.stack
-                });
-            }
             setError(err instanceof Error ? err.message : 'Deletion failed');
-            console.log('[DELETE] Re-fetching experiences to sync state');
             fetchExperiences();
         }
     };
@@ -204,7 +186,6 @@ const ExperienceManager = ({
             // When updating, remove ID from request body
             const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedExperience) : formattedExperience;
 
-            console.log(`${method} Experience - Request:`, { url, body: requestBody });
 
             const response = await fetch(url, {
                 method,
@@ -219,7 +200,6 @@ const ExperienceManager = ({
 
             // Get the saved data from response
             const savedData = await response.json();
-            console.log(`${method} Experience - Response:`, savedData);
 
             // Create a clean processed experience - use a consistent approach to ID
             const processedExperience = {
@@ -232,7 +212,6 @@ const ExperienceManager = ({
                 description: savedData.description || currentExperience.description
             };
 
-            console.log(`${method} Experience - Processed for UI:`, processedExperience);
 
             // Update the experiences state with a more reliable approach
             setExperiences(prev => {
@@ -256,7 +235,6 @@ const ExperienceManager = ({
             }, 300);
 
         } catch (err: any) {
-            console.error('Experience save failed:', err);
             setError(err.message || "Failed to save experience");
         }
     };
@@ -404,7 +382,6 @@ const ExperienceManager = ({
 
         const parsedDate = new Date(date);
         if (isNaN(parsedDate.getTime())) {
-            console.error(`Invalid date: ${date}`);
             return ''; // Return empty to avoid breaking things
         }
 

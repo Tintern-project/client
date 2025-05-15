@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(data.user);
 
     // Set the auth token in an HTTP-only cookie
     const nextResponse = NextResponse.json({
@@ -37,16 +36,32 @@ export async function POST(request: NextRequest) {
     nextResponse.cookies.set({
       name: "token",
       value: data.accessToken,
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax", // Using lax to allow cross-site navigation in production
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: "/",
+    });
+    
+    // Also set user data in a non-httpOnly cookie for client access
+    nextResponse.cookies.set({
+      name: "user",
+      value: JSON.stringify({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        phone: data.user.phone,
+        hasCV: data.user.hasCV || false,
+      }),
+      httpOnly: false, // Allow JavaScript access
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: "/",
     });
 
     return nextResponse;
   } catch (error) {
-    console.error("Login error:", error);
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }

@@ -61,7 +61,6 @@ export default function Home() {
       setJobListings(formattedJobs)
     } catch (error: any) {
       setError(error.message || "Failed to fetch jobs")
-      console.error("Error fetching all jobs:", error)
     } finally {
       setIsLoading(false)
     }
@@ -83,7 +82,6 @@ export default function Home() {
         return [...prev, job]
       })
     } catch (error) {
-      console.error("Error saving job:", error)
     }
   }
 

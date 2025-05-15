@@ -7,7 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import { useToast } from "./ToastContext";
 import { apiClient } from "@/lib/api-client";
@@ -39,35 +39,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname(); // Get current pathname
   const { showToast } = useToast();
 
+  // Centralized function to handle logout logic (clear state and cookies)
+  const logoutCoreLogic = async (showGlobalToast = false, redirect = true) => {
+    setUser(null);
+    setError(null);
+    Cookies.remove("user", { path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+    Cookies.remove("token", { path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+
+    // Optional: Trigger API logout if not already part of a calling flow.
+    // This might be redundant if called from the main logout function which already calls the API.
+    // Consider if this is needed for scenarios like auto-logout on token expiry/profile fetch failure.
+    // await fetch("/api/auth/logout", { method: "POST" }); 
+
+    if (showGlobalToast) {
+      showToast("Session ended. Please login again.", "error");
+    }
+    // Check current path before redirecting to avoid redirect loops or unnecessary redirects
+    if (redirect && pathname !== "/auth/login") {
+      router.push("/auth/login");
+    }
+  };
+
+  // Function to handle auth errors, typically called when an API request fails with 401/403
+  const handleAuthError = async () => {
+    await logoutCoreLogic(true); // Show toast and redirect
+  };
+
+
   useEffect(() => {
-    const loadUserFromCookie = () => {
-      // Set loading state while checking auth
+    const loadUserFromCookie = async () => {
       setIsLoading(true);
-
       try {
-        // Get user data from cookie
         const userCookie = Cookies.get("user");
+        const tokenCookie = Cookies.get("token"); // HttpOnly, so client can't read value but can check existence
 
-        // If user cookie exists, parse it and set the user state
         if (userCookie) {
-          const userData = JSON.parse(userCookie);
-          setUser(userData);
+          try {
+            const userData = JSON.parse(userCookie);
+            setUser(userData);
+          } catch (parseError) {
+            await logoutCoreLogic(false, false); // Clear corrupted cookie and state, don't show toast or redirect yet
+          }
+        } else if (tokenCookie) {
+          try {
+            const profileData = await apiClient("/users/my-profile", { method: "GET" });
+            if (profileData?.id) { // Ensure profileData is valid
+              const userData: User = {
+                id: profileData.id,
+                name: profileData.name,
+                email: profileData.email,
+                phone: profileData.phone,
+                hasCV: profileData.hasCV || false,
+              };
+              setUser(userData);
+              Cookies.set("user", JSON.stringify(userData), {
+                expires: 7,
+                path: "/",
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+              });
+            } else {
+              await logoutCoreLogic(true); // Token might be invalid, treat as logout, show toast & redirect
+            }
+          } catch (profileErr: any) {
+            // If profile fetch fails (e.g. 401, 403, network error), treat as logout
+            await handleAuthError(); // This will call logoutCoreLogic with toast and redirect
+          }
+        } else {
+          // No 'user' cookie and no 'token' cookie, ensure user is null and no auth attempt needed
+          setUser(null);
         }
       } catch (err) {
-        console.error("Error loading user from cookie:", err);
-        // Clear potentially corrupted cookies
-        Cookies.remove("user");
-        Cookies.remove("token");
+        // Catch-all for unexpected errors during cookie loading phase
+        await logoutCoreLogic(false); // Fallback to ensure clean state, don't show toast, allow redirect
       } finally {
-        // End loading state
         setIsLoading(false);
       }
     };
 
     loadUserFromCookie();
-  }, []);
+  }, [router]); // Added router to dependency array as logoutCoreLogic uses it.
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -98,14 +152,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasCV: data.hasCV || false,
       };
 
-      // Store user in cookie and state
-      // Set a longer expiration time to ensure persistence
+      // Store user in cookie and state (as a backup to server-set cookies)
+      // This ensures the user data is available even if the server-set cookie fails
       Cookies.set("user", JSON.stringify(userData), {
         expires: 7, // 7 days
         path: "/",
-        sameSite: "strict",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
       });
-
+      
       setUser(userData);
       showToast("Login successful!", "success");
 
@@ -115,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errorMessage = error.message || "Login failed";
       setError(errorMessage);
       showToast(errorMessage, "error");
-      console.error("Login failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +199,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errorMessage = error.message || "Registration failed";
       setError(errorMessage);
       showToast(errorMessage, "error");
-      console.error("Registration failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -153,29 +206,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setIsLoading(true);
-
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-
-      // Clear user state
-      setUser(null);
-
-      // Remove cookies
-      Cookies.remove("user");
-      Cookies.remove("token");
-      showToast("Logout successful!", "success");
-
-      // Navigate to home page
-      router.push("/");
-    } catch (error: any) {
-      const errorMessage = "Logout failed. Please try again.";
-      // setError(errorMessage); // Optional: if you have a global error display for logout
-      showToast(errorMessage, "error");
-      console.error("Logout error:", error);
+      // Call the API to clear server-side session and HttpOnly cookie
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) {
+        // Log error but proceed with client-side cleanup
+        showToast("Logout failed on server, clearing client session.", "warning");
+      }
+      
+      // Perform client-side logout (clear state, cookies, redirect)
+      await logoutCoreLogic(false, true); // Don't show global error toast from core, but allow redirect
+      showToast("Logged out successfully.", "success");
+      // logoutCoreLogic handles redirection to /auth/login if not already there and redirect is true
+      
+    } catch (error) {
+      showToast("Logout failed. Please try again.", "error");
+      // Ensure client-side is cleared even if API call throws an error before response check
+      await logoutCoreLogic(false, true); // Don't show global error toast from core, but allow redirect
     } finally {
       setIsLoading(false);
+      router.push("/");
     }
   };
 
@@ -202,14 +252,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       Cookies.set("user", JSON.stringify(newUserData), {
         expires: 7,
         path: "/",
-        sameSite: "strict",
+        sameSite: "lax", // Changed from strict to lax for consistency
+        secure: process.env.NODE_ENV === "production",
       });
       showToast("Profile updated successfully!", "success");
     } catch (error: any) {
       const errorMessage = error.message || "Failed to update profile";
       setError(errorMessage);
       showToast(errorMessage, "error");
-      console.error("Profile update failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -234,12 +284,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       Cookies.set("user", JSON.stringify(refreshedUserData), {
         expires: 7,
         path: "/",
-        sameSite: "strict",
+        sameSite: "lax", // Changed from strict to lax for consistency
+        secure: process.env.NODE_ENV === "production",
       });
       // Removed success toast as per "user action only" guideline
     } catch (error: any) {
-      // Not adding error toast as per "user action only" guideline for refresh
-      console.error("Failed to refresh user profile:", error);
+      // If refreshing profile fails, it could indicate a session issue (e.g., token expired).
+      // Treat this as an authentication error to ensure consistent state.
+      await handleAuthError();
     } finally {
       setIsLoading(false);
     }

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { FormInput } from "@/app/profile/components/ui/form-input";
 import { Button } from "@/app/profile/components/ui/button";
 import { X, Plus } from "lucide-react";
-import Popup from "./ui/popup"; // Update to use the new Popup component
+import Popup from "./ui/popup"; 
+import Cookies from "js-cookie"
 
 export interface Education {
     id?: string;
@@ -89,7 +90,6 @@ const EducationManager = ({
         try {
             return await response.json();
         } catch (e) {
-            console.error('Failed to parse JSON response:', e);
             throw new Error('Invalid response from server');
         }
     };
@@ -120,19 +120,13 @@ const EducationManager = ({
 
     const removeEducation = async (index: number) => {
         const eduToRemove = educations[index];
-        console.log('[DELETE] Initiating removal for education:', eduToRemove);
-
         if (!eduToRemove.id) {
-            console.log('[DELETE] Local-only education removed');
             setEducations(prev => prev.filter((_, i) => i !== index));
             return;
         }
 
         try {
-            console.log('[DELETE] Attempting API deletion for ID:', eduToRemove.id);
-            const token = localStorage.getItem('token');
-            console.log('[DELETE] Using token:', token ? 'exists' : 'missing');
-
+            const token = Cookies.get('token');
             const response = await fetch(`/api/users/education/${eduToRemove.id}`, {
                 method: 'DELETE',
                 headers: {
@@ -141,31 +135,15 @@ const EducationManager = ({
                 }
             });
 
-            console.log('[DELETE] Response status:', response.status);
-            console.log('[DELETE] Response headers:', response.headers);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[DELETE] Server error response:', errorText);
                 throw new Error(errorText || 'Failed to delete education');
             }
 
             const responseData = await response.json();
-            console.log('[DELETE] Success response:', responseData);
-
             setEducations(prev => prev.filter((_, i) => i !== index));
-            console.log('[DELETE] UI updated optimistically');
-
         } catch (err: any) {
-            console.error('[DELETE] Full error:', err);
-            if (err instanceof Error) {
-                console.error('[DELETE] Error details:', {
-                    message: err.message,
-                    stack: err.stack
-                });
-            }
             setError(err instanceof Error ? err.message : 'Deletion failed');
-            console.log('[DELETE] Re-fetching educations to sync state');
             fetchEducations();
         }
     };
@@ -206,13 +184,12 @@ const EducationManager = ({
             // When updating, remove ID from request body
             const requestBody = isUpdate ? (({ id, ...rest }) => rest)(formattedEducation) : formattedEducation;
 
-            console.log(`${method} Education - Request:`, { url, body: requestBody });
-
+            const token = Cookies.get("token");
             const response = await fetch(url, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify(requestBody)
             });
@@ -224,8 +201,6 @@ const EducationManager = ({
 
             // Get the saved data from response
             const savedData = await response.json();
-            console.log(`${method} Education - Response:`, savedData);
-
             // Create a clean processed education - use a consistent approach to ID
             const processedEducation = {
                 // For updates, maintain the same ID to avoid duplication
@@ -236,8 +211,6 @@ const EducationManager = ({
                 startDate: displayDate(savedData.startDate || currentEducation.startDate),
                 endDate: displayDate(savedData.endDate || currentEducation.endDate)
             };
-
-            console.log(`${method} Education - Processed for UI:`, processedEducation);
 
             // Update the educations state with a more reliable approach
             setEducations(prev => {
@@ -261,7 +234,6 @@ const EducationManager = ({
             }, 300);
 
         } catch (err: any) {
-            console.error('Education save failed:', err);
             setError(err.message || "Failed to save education");
         }
     };
@@ -414,7 +386,6 @@ const EducationManager = ({
 
         const parsedDate = new Date(date);
         if (isNaN(parsedDate.getTime())) {
-            console.error(`Invalid date: ${date}`);
             return ''; // Return empty to avoid breaking things
         }
 

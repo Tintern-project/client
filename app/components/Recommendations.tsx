@@ -45,7 +45,6 @@ export default function Recommendations() {
           ...job,
           id: job.id || job._id,
         }));
-        console.log(formattedJobs);
         setJobListings(formattedJobs);
       } catch (error: any) {
         setError(error.message || "Failed to fetch jobs");
@@ -66,7 +65,6 @@ export default function Recommendations() {
       setSelectedJob({ ...data, id: jobId });
       setIsModalOpen(true);
     } catch (error) {
-      console.error("Error fetching job details:", error);
       setModalError("Failed to load job details");
     } finally {
       setModalLoading(false);
@@ -77,7 +75,6 @@ export default function Recommendations() {
     if (applicationLink) {
       // Store the current job ID for later use when submitting the application
       setCurrentJobId(jobId);
-      console.log(jobId);
       // Open the application link in a new tab
       window.open(applicationLink, "_blank");
 
@@ -89,7 +86,6 @@ export default function Recommendations() {
         setShowApplyModal(true);
       }, 100);
     } else {
-      console.error("No application link provided");
       alert("Application link not available");
     }
   };
