@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api-client"; // Import the apiClient
 import Popup from "./ui/popup";
-import { Cookie } from "js-cookie";
+import Cookies from "js-cookie";
 
 export interface Application {
   _id: string;
@@ -65,7 +65,7 @@ const ApplicationsManager = ({
 
       setApplications(updatedApplications);
 
-      const token = Cookie.get("token");
+      const token = Cookies.get("token");
       const response = await fetch(
         `https://tintern-server.fly.dev/api/v1/application/${applicationToUpdate.jobId}`,
         {
