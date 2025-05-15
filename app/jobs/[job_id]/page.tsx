@@ -57,8 +57,8 @@ export default function JobDetail() {
       });
       setSaved(true);
       showToast("Job saved to favorites!", "success");
-    } catch (error) {
-      showToast("Failed to save job. Please try again.", "error");
+    } catch (error: any) {
+      showToast(error.message, "error");
     }
   };
 
@@ -101,8 +101,8 @@ export default function JobDetail() {
       setAtsButtonContent("ATS Available");
       setAtsData(response || "No ATS details available");
       showToast("ATS score fetched successfully!", "success");
-    } catch (error) {
-      showToast("Failed to fetch ATS score. Please try again.", "error");
+    } catch (error: any) {
+      showToast(error.message, "error");
       setAtsButtonContent("Get ATS Score");
     } finally {
       setIsFetchingATS(false);
