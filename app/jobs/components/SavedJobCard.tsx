@@ -71,7 +71,7 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
     setShowApplyModal(true);
     if (applicationLink) {
       window.open(applicationLink, "_blank");
-    } 
+    }
   };
 
   const handleConfirmApply = async () => {
@@ -98,9 +98,9 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({
   return (
     <div className="bg-[#d9d9d9] w-full rounded-md p-6 flex flex-col md:flex-row justify-between items-stretch transition-shadow hover:shadow-[0_0_24px_4px_rgba(220,38,38,0.6)]">
       <div className="flex gap-6 justify-center items-center">
-        <div className="w-20 h-20 ">
+        <div className="w-20 h-20 hidden sm:block">
           <Image
-            src="/placeholder.svg?height=80&width=80"
+            src="/globe.svg?height=80&width=80"
             alt={`${company} logo`}
             width={80}
             height={80}

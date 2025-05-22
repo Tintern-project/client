@@ -1,41 +1,42 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Get the pathname
   const path = request.nextUrl.pathname;
 
-  // Define public paths that don't need authentication
+  // Skip middleware for static files and excluded paths
+  if (
+    path.startsWith("/_next/") || // Next.js static assets
+    path.startsWith("/api/auth/") || // Authentication API routes
+    /\.(jpg|png|ico|svg|webp)$/.test(path) || // Image files
+    path === "/favicon.ico" // Favicon
+  ) {
+    return NextResponse.next(); // Proceed without applying middleware logic
+  }
+
+  // Define public paths that don’t require authentication
   const isPublicPath =
     path === "/" ||
-    path === "/jobs" || // Added /jobs to public paths
+    path === "/jobs" ||
     path === "/auth/login" ||
-    path === "/auth/signup" ||
-    path.startsWith("/api/auth/");
+    path === "/auth/signup";
 
-  // Check if the user is authenticated
+  // Check for authentication token
   const token = request.cookies.get("token")?.value;
   const isAuthenticated = !!token;
 
-  // Redirect logic
+  // Redirect unauthenticated users from private paths to login
   if (!isPublicPath && !isAuthenticated) {
-    // Store the original URL to redirect back after login
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     url.searchParams.set("callbackUrl", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated and tries to access login/signup, redirect to profile
+  // Redirect authenticated users away from login/signup pages
   if (isAuthenticated && (path === "/auth/login" || path === "/auth/signup")) {
     return NextResponse.redirect(new URL("/profile", request.url));
   }
 
+  // Proceed with the request
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|logo.png|logo2.png|hero.jpg).*)",
-  ],
-};

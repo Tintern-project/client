@@ -30,6 +30,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (userId: string, userData: any) => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  isInitializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,19 +44,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
 
   // Centralized function to handle logout logic (clear state and cookies)
-  const logoutCoreLogic = async (showGlobalToast = false, redirect = true) => {
+  const logoutCoreLogic = async (
+    showGlobalToast = false,
+    redirect = true,
+    message = "Session ended. Please login again."
+  ) => {
     setUser(null);
     setError(null);
-    Cookies.remove("user", { path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
-    Cookies.remove("token", { path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
-
-    // Optional: Trigger API logout if not already part of a calling flow.
-    // This might be redundant if called from the main logout function which already calls the API.
-    // Consider if this is needed for scenarios like auto-logout on token expiry/profile fetch failure.
-    // await fetch("/api/auth/logout", { method: "POST" }); 
+    Cookies.remove("user", {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    Cookies.remove("token", {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
 
     if (showGlobalToast) {
-      showToast("Session ended. Please login again.", "error");
+      showToast(message, "error");
     }
     // Check current path before redirecting to avoid redirect loops or unnecessary redirects
     if (redirect && pathname !== "/auth/login") {
@@ -64,29 +72,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Function to handle auth errors, typically called when an API request fails with 401/403
-  const handleAuthError = async () => {
-    await logoutCoreLogic(true); // Show toast and redirect
+  const handleAuthError = async (
+    message = "Your session has expired. Please login again."
+  ) => {
+    await logoutCoreLogic(true, true, message);
   };
-
 
   useEffect(() => {
     const loadUserFromCookie = async () => {
       setIsLoading(true);
       try {
         const userCookie = Cookies.get("user");
-        const tokenCookie = Cookies.get("token"); // HttpOnly, so client can't read value but can check existence
+        const tokenCookie = Cookies.get("token");
 
+        // If we're already on the login page, don't do anything
+        if (pathname === "/auth/login") {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // If we have no cookies at all, just set user to null without redirect
+        if (!userCookie && !tokenCookie) {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // If we have a valid user cookie, use it
         if (userCookie) {
           try {
             const userData = JSON.parse(userCookie);
+            // If we have a user cookie but no token, clear everything
+            if (!tokenCookie) {
+              await logoutCoreLogic(
+                true,
+                true,
+                "Your session is incomplete. Please login again."
+              );
+              return;
+            }
             setUser(userData);
+            setIsLoading(false);
+            return;
           } catch (parseError) {
-            await logoutCoreLogic(false, false); // Clear corrupted cookie and state, don't show toast or redirect yet
+            await logoutCoreLogic(
+              true,
+              true,
+              "Your session data is corrupted. Please login again."
+            );
           }
-        } else if (tokenCookie) {
+        }
+
+        // If we only have a token, try to fetch the profile
+        if (tokenCookie) {
           try {
-            const profileData = await apiClient("/users/my-profile", { method: "GET" });
-            if (profileData?.id) { // Ensure profileData is valid
+            const profileData = await apiClient("/users/my-profile", {
+              method: "GET",
+            });
+            if (profileData?.id) {
               const userData: User = {
                 id: profileData.id,
                 name: profileData.name,
@@ -101,27 +145,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 sameSite: "lax",
                 secure: process.env.NODE_ENV === "production",
               });
+              setIsLoading(false);
+              return;
             } else {
-              await logoutCoreLogic(true); // Token might be invalid, treat as logout, show toast & redirect
+              await logoutCoreLogic(
+                true,
+                true,
+                "Unable to retrieve your profile. Please login again."
+              );
             }
           } catch (profileErr: any) {
-            // If profile fetch fails (e.g. 401, 403, network error), treat as logout
-            await handleAuthError(); // This will call logoutCoreLogic with toast and redirect
+            const errorMessage =
+              profileErr.status === 401
+                ? "Your session has expired. Please login again."
+                : "Unable to verify your session. Please login again.";
+            await handleAuthError(errorMessage);
           }
-        } else {
-          // No 'user' cookie and no 'token' cookie, ensure user is null and no auth attempt needed
-          setUser(null);
         }
       } catch (err) {
-        // Catch-all for unexpected errors during cookie loading phase
-        await logoutCoreLogic(false); // Fallback to ensure clean state, don't show toast, allow redirect
+        await logoutCoreLogic(
+          true,
+          true,
+          "An unexpected error occurred. Please login again."
+        );
       } finally {
         setIsLoading(false);
       }
     };
 
     loadUserFromCookie();
-  }, [router]); // Added router to dependency array as logoutCoreLogic uses it.
+  }, [router, pathname]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -160,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
       });
-      
+
       setUser(userData);
       showToast("Login successful!", "success");
 
@@ -211,14 +264,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) {
         // Log error but proceed with client-side cleanup
-        showToast("Logout failed on server, clearing client session.", "warning");
+        showToast(
+          "Logout failed on server, clearing client session.",
+          "warning"
+        );
       }
-      
+
       // Perform client-side logout (clear state, cookies, redirect)
       await logoutCoreLogic(false, true); // Don't show global error toast from core, but allow redirect
       showToast("Logged out successfully.", "success");
       // logoutCoreLogic handles redirection to /auth/login if not already there and redirect is true
-      
     } catch (error) {
       showToast("Logout failed. Please try again.", "error");
       // Ensure client-side is cleared even if API call throws an error before response check
@@ -299,13 +354,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
-    isLoading, // Ensured isLoading is used
+    isLoading,
     error,
     login,
     signup,
     logout,
     updateProfile,
     refreshUserProfile,
+    isInitializing: isLoading && !user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
